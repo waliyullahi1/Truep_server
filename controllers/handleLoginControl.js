@@ -102,7 +102,7 @@ export const handleLogin = async (req, res) => {
      const googleOAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
                 const params = new URLSearchParams({
                     client_id: process.env.GOOGLE_CLIENT_ID,
-                    redirect_uri: `http://localhost:5000/auth/google/callback`,
+                    redirect_uri: `https://truep-server.onrender.com/auth/google/callback`,
                     response_type: 'code',
                     scope: 'email profile',
                     access_type: 'offline',
