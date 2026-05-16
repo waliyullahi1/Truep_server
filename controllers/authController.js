@@ -446,7 +446,7 @@ export const protectPages = async (req, res, next) => {
 
 
   const cookies = req.cookies;
-
+  
   
   if (!cookies?.jwt) {
    
