@@ -7,7 +7,7 @@ import axios from 'axios';
 export const protect = async (req, res, next) => {
   let token;
  
-  
+    console.log('token is providede',  req.cookies);
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
@@ -15,11 +15,12 @@ export const protect = async (req, res, next) => {
   else if (req.cookies && req.cookies.token) {
   
     token = req.cookies.jwt;
+    
+    console.log('token is providede', token);
     if (!token) {
       token = req.cookies.jwt
     }
 
-    console.log('token is providede', token);
     
     
     
