@@ -43,7 +43,8 @@ const corsOptions = {
   origin: [
     "https://virex.codes",
     "https://www.virex.codes",
-    "http://localhost:3000"
+    "http://localhost:3000",
+    "https://truep-lpag.vercel.app"
   ],
   credentials: true,
   optionsSuccessStatus: 200
@@ -65,17 +66,7 @@ app.use("/auth", authRoute)
 app.use("/profile", profileRoutes)
 app.use("/property", propertRoutes)
 app.use("/kyc", kycRoutes)
-// app.use("/logout", logoutRoute)
-// app.use("/refresh", refreshRoute)
-// app.use("/dashbord", dashbordRoute)
-// app.use("/transaction", transactionRoute)
-// app.use("/fund", fundRoute)
-// app.use("/resetpassword", resetPasswordRoute)
-// app.use("/veryfyJWT", verifyJWT)
-// app.use("/valid", verifyRoute)
-// app.use("/", smsRoute)
-// app.use("/ping", pingRoute)
-// app.use("/notices", noticesRoute)
+
 
 
 // Test route
