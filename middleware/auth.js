@@ -7,13 +7,13 @@ import axios from 'axios';
 export const protect = async (req, res, next) => {
   let token;
  
-    console.log('token is providede',  req.cookies);
+  console.log(req.cookies, ' it  try to check authentification');
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
 
   else if (req.cookies && req.cookies.token) {
-  
+  console.log(' it  try to check authentification');
     token = req.cookies.jwt;
     
     console.log('token is providede', token);
@@ -28,6 +28,7 @@ export const protect = async (req, res, next) => {
 
   }
   token = req.cookies.jwt 
+ console.log(' it  try to check authentification');
  
   if (!token) {
     return res.status(401).json({ message: 'Not authorized, no token' });
