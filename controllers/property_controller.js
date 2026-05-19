@@ -209,7 +209,8 @@ export const updatePropertyStatus = async (req, res) => {
       approved: ['sold', 'rented', 'off_market', 'draft'],
       off_market: ['approved'],
       sold: [],
-      rented: []
+      rented: [],
+       suspended: []
     }
 
     const currentStatus = property.status

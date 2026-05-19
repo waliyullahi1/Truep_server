@@ -98,13 +98,30 @@ const PropertSchema = new Schema({
   },
 
   houseDetails: { type: Object, default: null },
-
+  
   /* ✅ FIXED MEDIA */
   media: {
     files: { type: [ImageSchema], default: [] },
     video: String
   },
 
+
+  suspended: {
+  isSuspended: {
+    type: Boolean,
+    default: false
+  },
+
+  reason: {
+    type: String,
+    default: null
+  },
+
+  suspendedAt: {
+    type: Date,
+    default: null
+  }
+},
 
   features: [
     {
@@ -129,7 +146,7 @@ const PropertSchema = new Schema({
 
   status: {
     type: String,
-    enum: ["draft", "sold","approved", "verifing", "rented", "off_market", "pending"],
+    enum: ["draft", "sold","approved", "verifing", "rented", "off_market", "suspended", "pending"],
     default: "draft"
   },
     slug: {

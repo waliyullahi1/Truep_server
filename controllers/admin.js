@@ -4,9 +4,11 @@ import  Others from "../model/Others.js";
 import axios from "axios";
 import mongoose from 'mongoose';
 import Propert from "../model/Property.js";
-
+import {  bravo_sendEmail } from "../service/bravoemail.js";
+import {propertyBlockedTemplate} from "../template/block_template.js";
 export const getallusers = async (req, res) => {
   try {
+
 
     /* =====================================================
        QUERY PARAMS
@@ -98,7 +100,7 @@ export const getallusers = async (req, res) => {
 
       {
         $lookup: {
-          from: "propert",
+          from: "properts",
           localField: "_id",
           foreignField: "userId",
           as: "properties",
@@ -179,7 +181,8 @@ export const getallusers = async (req, res) => {
        TOTAL USERS
     ===================================================== */
 
-    const totalUsers = await Usertp.countDocuments(matchFilter)
+    const totalUsers = await Usertp.countDocuments()
+       
 
     /* =====================================================
        RESPONSE
@@ -194,7 +197,7 @@ export const getallusers = async (req, res) => {
         totalPages: Math.ceil(totalUsers / limit),
         limit,
       },
-
+     
       data: users,
     })
 
@@ -240,7 +243,7 @@ export const adminDashboardStats = async (req, res) => {
     ===================================================== */
 
     const totalAgents = await Usertp.countDocuments({
-      role: "agent",
+      role: "Agent",
     })
 
     /* =====================================================
@@ -271,21 +274,21 @@ export const adminDashboardStats = async (req, res) => {
        TOTAL PROPERTIES
     ===================================================== */
 
-    const totalProperties = await Property.countDocuments()
+    const totalProperties = await Propert.countDocuments()
 
     /* =====================================================
        TOTAL ACTIVE PROPERTIES
     ===================================================== */
 
-    const totalActiveProperties = await Property.countDocuments({
-      status: "active",
+    const totalActiveProperties = await Propert.countDocuments({
+      status: "approved",
     })
 
     /* =====================================================
        TOTAL SOLD PROPERTIES
     ===================================================== */
 
-    const totalSoldProperties = await Property.countDocuments({
+    const totalSoldProperties = await Propert.countDocuments({
       status: "sold",
     })
 
@@ -293,15 +296,15 @@ export const adminDashboardStats = async (req, res) => {
        TOTAL PENDING PROPERTIES
     ===================================================== */
 
-    const totalPendingProperties = await Property.countDocuments({
-      status: "pending",
+    const totalPendingProperties = await Propert.countDocuments({
+      status: "draft",
     })
 
     /* =====================================================
        TOTAL FEATURED PROPERTIES
     ===================================================== */
 
-    const totalFeaturedProperties = await Property.countDocuments({
+    const totalFeaturedProperties = await Propert.countDocuments({
       featured: true,
     })
 
@@ -309,7 +312,7 @@ export const adminDashboardStats = async (req, res) => {
        TOTAL USERS WITH PROPERTIES
     ===================================================== */
 
-    const usersWithProperties = await Property.distinct("userId")
+    const usersWithProperties = await Propert.distinct("userId")
 
     /* =====================================================
        USERS REGISTERED TODAY
@@ -329,7 +332,7 @@ export const adminDashboardStats = async (req, res) => {
        PROPERTIES POSTED TODAY
     ===================================================== */
 
-    const propertiesToday = await Property.countDocuments({
+    const propertiesToday = await Propert.countDocuments({
       createdAt: {
         $gte: today,
       },
@@ -383,3 +386,427 @@ export const adminDashboardStats = async (req, res) => {
 
   }
 }
+
+export const getAdminProperties = async (req, res) => {
+  try {
+
+    let {
+      search,
+      type,
+      purpose,
+      category,
+      status,
+      state,
+      city,
+      minPrice,
+      maxPrice,
+      featured,
+      page = 1,
+      limit = 10,
+      sort = "newest"
+    } = req.query
+
+    /* =========================================
+       PAGINATION
+    ========================================= */
+
+    page = Number(page)
+    limit = Number(limit)
+
+    const skip = (page - 1) * limit
+
+    /* =========================================
+       FILTER
+    ========================================= */
+
+    const query = {}
+
+    /* =========================================
+       SEARCH
+    ========================================= */
+
+    if (search?.trim()) {
+
+      query.$or = [
+
+        {
+          title: {
+            $regex: search.trim(),
+            $options: "i"
+          }
+        },
+
+        {
+          description: {
+            $regex: search.trim(),
+            $options: "i"
+          }
+        },
+
+        {
+          "location.state": {
+            $regex: search.trim(),
+            $options: "i"
+          }
+        },
+
+        {
+          "location.city": {
+            $regex: search.trim(),
+            $options: "i"
+          }
+        }
+
+      ]
+    }
+
+    /* =========================================
+       TYPE
+    ========================================= */
+
+    if (type) {
+      query.type = type.toLowerCase()
+    }
+
+    /* =========================================
+       PURPOSE
+    ========================================= */
+
+    if (purpose) {
+      query.purpose = purpose.toLowerCase()
+    }
+
+    /* =========================================
+       CATEGORY
+    ========================================= */
+
+    if (category) {
+      query.category = category.toLowerCase()
+    }
+
+    /* =========================================
+       STATUS
+    ========================================= */
+
+    if (status) {
+      query.status = status
+    }
+
+    /* =========================================
+       LOCATION
+    ========================================= */
+
+    if (state) {
+      query["location.state"] = state
+    }
+
+    if (city) {
+      query["location.city"] = city
+    }
+
+    /* =========================================
+       FEATURED
+    ========================================= */
+
+    if (featured === "true") {
+      query.featured = true
+    }
+
+    if (featured === "false") {
+      query.featured = false
+    }
+
+    /* =========================================
+       PRICE RANGE
+    ========================================= */
+
+    if (minPrice || maxPrice) {
+
+      query["pricing.price"] = {}
+
+      if (minPrice) {
+        query["pricing.price"].$gte = Number(minPrice)
+      }
+
+      if (maxPrice) {
+        query["pricing.price"].$lte = Number(maxPrice)
+      }
+
+    }
+
+    /* =========================================
+       SORT
+    ========================================= */
+
+    let sortOption = {}
+
+    switch (sort) {
+
+      case "price_asc":
+        sortOption = {
+          "pricing.price": 1
+        }
+        break
+
+      case "price_desc":
+        sortOption = {
+          "pricing.price": -1
+        }
+        break
+
+      case "oldest":
+        sortOption = {
+          createdAt: 1
+        }
+        break
+
+      default:
+        sortOption = {
+          createdAt: -1
+        }
+
+    }
+
+    /* =========================================
+       GET PROPERTIES
+    ========================================= */
+
+    const properties = await Propert.aggregate([
+
+      /* =========================================
+         MATCH
+      ========================================= */
+
+      {
+        $match: query
+      },
+
+      /* =========================================
+         OWNER
+      ========================================= */
+
+      {
+        $lookup: {
+          from: "usertps",
+          localField: "userId",
+          foreignField: "_id",
+          as: "owner"
+        }
+      },
+
+      {
+        $unwind: {
+          path: "$owner",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+
+      /* =========================================
+         REMOVE SENSITIVE
+      ========================================= */
+
+      {
+        $project: {
+          "__v": 0,
+
+          "owner.password": 0,
+          "owner.refreshToken": 0,
+          "owner.resetPasswordToken": 0,
+          "owner.resetPasswordExpires": 0,
+          "owner.emailVerificationToken": 0
+        }
+      },
+
+      /* =========================================
+         SORT
+      ========================================= */
+
+      {
+        $sort: sortOption
+      },
+
+      /* =========================================
+         PAGINATION
+      ========================================= */
+
+      {
+        $skip: skip
+      },
+
+      {
+        $limit: limit
+      }
+
+    ])
+
+    /* =========================================
+       TOTAL
+    ========================================= */
+
+    const totalProperties = await Propert.countDocuments(query)
+
+    /* =========================================
+       RESPONSE
+    ========================================= */
+
+    return res.status(200).json({
+      success: true,
+
+      pagination: {
+        totalProperties,
+        currentPage: page,
+        totalPages: Math.ceil(totalProperties / limit),
+        limit
+      },
+
+      results: properties.length,
+
+      data: properties
+    })
+
+  } catch (error) {
+
+    console.log(error)
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    })
+
+  }
+}
+
+
+
+export const updatePropertyStatus = async (req, res) => {
+  try {
+
+    const { propertyId } = req.params
+
+    const {
+      status,
+      reason
+    } = req.body
+
+    /* =========================================
+       VALID STATUS
+    ========================================= */
+
+    const validStatus = [
+      "approved",
+      "draft",
+      "pending",
+      "sold",
+      "rented",
+      "off_market",
+      "verifying",
+      "suspended"
+    ]
+
+    if (!validStatus.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status"
+      })
+    }
+
+    /* =========================================
+       FIND PROPERTY
+    ========================================= */
+
+    const property = await Propert.findById(propertyId)
+      .populate("userId")
+
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        message: "Property not found"
+      })
+    }
+
+    const existingUser = property.userId
+
+    /* =========================================
+       UPDATE STATUS
+    ========================================= */
+
+    property.status = status
+
+    /* =========================================
+       SUSPENSION
+    ========================================= */
+
+    if (status === "suspended") {
+
+      property.suspended = {
+        isSuspended: true,
+        reason: reason || "Violation detected",
+        suspendedAt: new Date()
+      }
+
+      /* =========================================
+         SEND EMAIL
+      ========================================= */
+
+      if (existingUser?.email) {
+
+        await bravo_sendEmail({
+          to: existingUser.email,
+
+          subject: "Your Property Listing Has Been Blocked",
+
+          html: propertyBlockedTemplate({
+            userName: `${existingUser.firstName || ""} ${existingUser.lastName || ""}`,
+
+            propertyTitle: property.title,
+
+            reason: reason || "Violation detected",
+
+            websiteName: "Abanise",
+
+            websiteUrl: "https://truepeople.com"
+          })
+        })
+
+      }
+
+    } else {
+
+      property.suspended = {
+        isSuspended: false,
+        reason: null,
+        suspendedAt: null
+      }
+
+    }
+
+    /* =========================================
+       SAVE
+    ========================================= */
+
+    await property.save()
+
+    /* =========================================
+       RESPONSE
+    ========================================= */
+
+    return res.status(200).json({
+      success: true,
+      message: `Property ${status} successfully`,
+      data: property
+    })
+
+  } catch (error) {
+
+    console.log(error)
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    })
+
+  }
+}
+

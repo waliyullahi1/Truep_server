@@ -24,6 +24,7 @@ import  rootRoute from "./route/root.js"
 import profileRoutes from "./route/api/profile.js"
 import propertRoutes from "./route/api/property.js"
 import kycRoutes from "./route/api/kyc.js"
+import adminRoutes from "./route/api/admin.js"
 const app = express()
 
 const PORT = process.env.PORT || 5000
@@ -66,7 +67,7 @@ app.use("/auth", authRoute)
 app.use("/profile", profileRoutes)
 app.use("/property", propertRoutes)
 app.use("/kyc", kycRoutes)
-
+app.use("/admin", adminRoutes)
 
 
 // Test route
