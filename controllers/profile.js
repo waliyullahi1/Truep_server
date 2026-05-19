@@ -209,15 +209,15 @@ export const updateProfile = async (req, res) => {
         message: 'Invalid profile data'
       })
     }
-    if(req.user.roles !== "Admin") {
-      if (details.roles === 'Admin') {
+    // if(req.user.roles !== "Admin") {
+    //   if (details.roles === 'Admin') {
 
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid profile data'
-      })
-    }
-    }
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'Invalid profile data'
+    //   })
+    // }
+    // }
     
 
     /* =========================================
