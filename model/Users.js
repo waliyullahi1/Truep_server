@@ -72,6 +72,7 @@ const Userscheme = new Schema({
        enum : ["user",
       "Surveyor",
       "Owner",
+      "Admin",
       "Agent",
       "Architect",
       "Civil Engineer",
