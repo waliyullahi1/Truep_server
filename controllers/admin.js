@@ -267,7 +267,7 @@ export const adminDashboardStats = async (req, res) => {
     ===================================================== */
 
     const totalAdmins = await Usertp.countDocuments({
-      role: "admin",
+      role: "Admin",
     })
 
     /* =====================================================
