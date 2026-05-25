@@ -139,18 +139,18 @@ export const googleCallback = async (req, res) => {
         //   maxAge: 24 * 60 * 60 * 1000,
         //   });
           // for Prodduct
-          res.cookie('jwt', result.refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    maxAge: 24 * 60 * 60 * 1000,
-});
-        // res.cookie('jwt', result.refreshToken, {
-        //     httpOnly: true,
-        //     secure: process.env.NODE_ENV === 'production',
-        //     sameSite: 'none',
-        //     maxAge: 24 * 60 * 60 * 1000,
-        // });
+//           res.cookie('jwt', result.refreshToken, {
+//     httpOnly: true,
+//     secure: true,
+//     sameSite: 'none',
+//     maxAge: 24 * 60 * 60 * 1000,
+// });
+        res.cookie('jwt', result.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'none',
+            maxAge: 24 * 60 * 60 * 1000,
+        });
 
         // Redirect to frontend with access token
         return res.redirect(
