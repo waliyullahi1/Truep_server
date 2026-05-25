@@ -129,14 +129,28 @@ export const googleCallback = async (req, res) => {
 
         const result = await AuthService.googleAuth(code);
          result.refreshToken
-       
+        console.log( result.refreshToken);
+        
         // Save refresh token in cookie
         res.cookie('jwt', result.refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'none',
-            maxAge: 24 * 60 * 60 * 1000,
-        });
+           httpOnly: true,
+           secure: false, // localhost
+           sameSite: 'lax', // important
+          maxAge: 24 * 60 * 60 * 1000,
+          });
+          // for Prodduct
+//           res.cookie('jwt', result.refreshToken, {
+//     httpOnly: true,
+//     secure: true,
+//     sameSite: 'none',
+//     maxAge: 24 * 60 * 60 * 1000,
+// });
+        // res.cookie('jwt', result.refreshToken, {
+        //     httpOnly: true,
+        //     secure: process.env.NODE_ENV === 'production',
+        //     sameSite: 'none',
+        //     maxAge: 24 * 60 * 60 * 1000,
+        // });
 
         // Redirect to frontend with access token
         return res.redirect(

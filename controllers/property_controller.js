@@ -742,9 +742,9 @@ export const getAllProperty = async (req, res) => {
     /* =========================
        🚧 STATUS
     ========================= */
-    if (status) {
-      query.status = status
-    }
+    // if (status) {
+    //   query.status = status
+    // }
 
     /* =========================
        🔥 APPLY $or (ONCE ONLY)
@@ -771,7 +771,7 @@ export const getAllProperty = async (req, res) => {
     ========================= */
 
 
-    const properties = await Propert.find(query)
+    const properties = await Propert.find({status: 'approved', ...query})
       .sort(sortOption)
       .skip(skip)
       .limit(limit)
