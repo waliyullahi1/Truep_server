@@ -20,7 +20,7 @@ const PropertSchema = new Schema({
   title: { type: String, required: true, trim: true },
   description: String,
 
-  type: { type: String, enum: ["land", "house"], required: true },
+  type: { type: String, enum: ["land", "house","hostel"], required: true },
   purpose: { type: String, enum: ["sale", "rent"], required: true },
   category: { type: String, required: true },
 
@@ -55,7 +55,7 @@ const PropertSchema = new Schema({
       },
       unit: {
         type: String,
-        enum: ["day", "week", "month", "year"],
+        enum: ["day", "weekly", "monthly", "yearly"],
         default: null
       }
     }
@@ -98,7 +98,14 @@ const PropertSchema = new Schema({
   },
 
   houseDetails: { type: Object, default: null },
-  
+  hostelDetails: {
+  school: {
+    abbreviation: String,
+    name: String
+  },
+  gender: String,
+  name: String
+},
   /* ✅ FIXED MEDIA */
   media: {
     files: { type: [ImageSchema], default: [] },

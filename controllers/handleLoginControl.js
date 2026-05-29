@@ -89,12 +89,19 @@ export const handleLogin = async (req, res) => {
       await foundUser.save();
 
       // Set HTTP-only cookie
-      res.cookie("jwt", refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "none",
-        maxAge: 24 * 60 * 60 * 1000, // 1 day
-      });
+        // res.cookie('jwt', refreshToken, {
+        //    httpOnly: true,
+        //    secure: false, // localhost
+        //    sameSite: 'lax', // important
+        //   maxAge: 24 * 60 * 60 * 1000,
+        //   });
+
+       res.cookie('jwt', result.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'none',
+            maxAge: 24 * 60 * 60 * 1000,
+        });
 
       // Send access token
       res.status(200).json({ data: foundUser  });
@@ -133,11 +140,11 @@ export const googleCallback = async (req, res) => {
         
         // Save refresh token in cookie
         // res.cookie('jwt', result.refreshToken, {
-        //    httpOnly: true,
-        //    secure: false, // localhost
-        //    sameSite: 'lax', // important
-        //   maxAge: 24 * 60 * 60 * 1000,
-        //   });
+          //  httpOnly: true,
+          //  secure: false, // localhost
+          //  sameSite: 'lax', // important
+          // maxAge: 24 * 60 * 60 * 1000,
+          // });
           // for Prodduct
 //           res.cookie('jwt', result.refreshToken, {
 //     httpOnly: true,

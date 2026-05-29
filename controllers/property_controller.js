@@ -624,9 +624,219 @@ export const deletePropertyImage = async (req, res) => {
    UPDATE / PUBLIC ROUTE
 ===================================================== */
 
-
-
 export const getAllProperty = async (req, res) => {
+  try {
+
+    let {
+      search,
+      category,
+      location,
+      purpose,
+      state,
+      city,
+      minPrice,
+      maxPrice,
+      minRooms,
+      maxRooms,
+      type,
+      page = 1,
+      limit = 10,
+      sort = "random"
+    } = req.query
+
+    page = Number(page)
+    limit = Number(limit)
+
+    const query = {}
+    const orConditions = []
+
+    /* =========================
+       SEARCH
+    ========================= */
+
+    if (search) {
+      orConditions.push(
+        { title: { $regex: search, $options: "i" } },
+        { "location.address": { $regex: search, $options: "i" } },
+        { "location.city": { $regex: search, $options: "i" } },
+        { "location.state": { $regex: search, $options: "i" } },
+        { "location.lga": { $regex: search, $options: "i" } }
+      )
+    }
+
+    /* =========================
+       LOCATION
+    ========================= */
+
+    if (state) {
+      query["location.state"] = new RegExp(`^${state}$`, "i")
+    }
+
+    if (city) {
+      query["location.city"] = new RegExp(`^${city}$`, "i")
+    }
+
+    if (location && !state && !city) {
+      orConditions.push(
+        { "location.address": { $regex: location, $options: "i" } },
+        { "location.city": { $regex: location, $options: "i" } },
+        { "location.state": { $regex: location, $options: "i" } },
+        { "location.lga": { $regex: location, $options: "i" } }
+      )
+    }
+
+    /* =========================
+       TYPE
+    ========================= */
+
+    if (type) {
+      query.type = type.toLowerCase()
+    }
+
+    /* =========================
+       PURPOSE
+    ========================= */
+
+    if (purpose) {
+      query.purpose = new RegExp(`^${purpose}$`, "i")
+    }
+
+    /* =========================
+       CATEGORY
+    ========================= */
+
+    if (category && category !== "All") {
+      query.category = new RegExp(`^${category}$`, "i")
+    }
+
+    /* =========================
+       PRICE
+    ========================= */
+
+    if (minPrice || maxPrice) {
+
+      query["pricing.price"] = {}
+
+      if (minPrice) {
+        query["pricing.price"].$gte = Number(minPrice)
+      }
+
+      if (maxPrice) {
+        query["pricing.price"].$lte = Number(maxPrice)
+      }
+    }
+
+    /* =========================
+       BEDROOMS
+    ========================= */
+
+    if (minRooms || maxRooms) {
+
+      const valueQuery = {}
+
+      if (minRooms) {
+        valueQuery.$gte = Number(minRooms)
+      }
+
+      if (maxRooms) {
+        valueQuery.$lte = Number(maxRooms)
+      }
+
+      query.features = {
+        $elemMatch: {
+          key: "bedroom",
+          value: valueQuery
+        }
+      }
+    }
+
+    /* =========================
+       APPLY OR
+    ========================= */
+
+    if (orConditions.length) {
+      query.$or = orConditions
+    }
+
+    /* =========================
+       PAGINATION
+    ========================= */
+
+    const skip = (page - 1) * limit
+
+    /* =========================
+       SORT OPTIONS
+    ========================= */
+
+    const sortMap = {
+      newest: { createdAt: -1 },
+
+      oldest: { createdAt: 1 },
+
+      price_asc: {
+        "pricing.price": 1
+      },
+
+      price_desc: {
+        "pricing.price": -1
+      },
+
+      // persistent random order
+      random: {
+        randomOrder: 1
+      }
+    }
+
+    const sortOption = sortMap[sort] || {
+      randomOrder: 1
+    }
+
+    /* =========================
+       EXECUTE
+    ========================= */
+
+    const properties = await Propert.find({
+      status: "approved",
+      ...query
+    })
+      .sort(sortOption)
+      .skip(skip)
+      .limit(limit)
+
+    /* =========================
+       TOTAL
+    ========================= */
+
+    const total = await Propert.countDocuments({
+      status: "approved",
+      ...query
+    })
+
+    /* =========================
+       RESPONSE
+    ========================= */
+
+    return res.status(200).json({
+      success: true,
+      results: properties.length,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+      data: properties
+    })
+
+  } catch (error) {
+
+    console.error("PROPERTY ERROR:", error)
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    })
+  }
+}
+export const getAllPropertyss = async (req, res) => {
   try {
     let {
       search,
@@ -642,27 +852,27 @@ export const getAllProperty = async (req, res) => {
       type,
       page = 1,
       limit = 10,
-      sort = "newest",
-      status
+      sort = "newest"
     } = req.query
 
     page = Number(page)
     limit = Number(limit)
-    console.log(search,'search' );
-     console.log(category,'category' );
-      console.log(location,'location' );
-       console.log(state,'state' );
-        console.log(city,'city' );
-         console.log(type,'type' );
-          console.log(search,'search' );
-          console.log(purpose,'purpose' )
-    
+
+    console.log(search, "search")
+    console.log(category, "category")
+    console.log(location, "location")
+    console.log(state, "state")
+    console.log(city, "city")
+    console.log(type, "type")
+    console.log(purpose, "purpose")
+
     const query = {}
     const orConditions = []
 
     /* =========================
-       🔍 SEARCH (MERGED)
+       🔍 SEARCH
     ========================= */
+
     if (search) {
       orConditions.push(
         { title: { $regex: search, $options: "i" } },
@@ -674,22 +884,19 @@ export const getAllProperty = async (req, res) => {
     }
 
     /* =========================
-       📍 LOCATION (SMART)
+       📍 LOCATION
     ========================= */
 
-    // exact state
     if (state) {
       query["location.state"] = new RegExp(`^${state}$`, "i")
     }
 
-    // exact city
     if (city) {
       query["location.city"] = new RegExp(`^${city}$`, "i")
     }
-    console.log(state, location, 'city and state');
-    
-    // fallback location (only if no state/city)
-   if (location && !state && !city) {
+
+    // fallback location
+    if (location && !state && !city) {
       orConditions.push(
         { "location.address": { $regex: location, $options: "i" } },
         { "location.city": { $regex: location, $options: "i" } },
@@ -701,35 +908,57 @@ export const getAllProperty = async (req, res) => {
     /* =========================
        🏠 TYPE
     ========================= */
+
     if (type) {
       query.type = type.toLowerCase()
     }
-    if(purpose){
+
+    /* =========================
+       🎯 PURPOSE
+    ========================= */
+
+    if (purpose) {
       query.purpose = new RegExp(`^${purpose}$`, "i")
     }
+
     /* =========================
        🏷 CATEGORY
     ========================= */
+
     if (category && category !== "All") {
-      query.category = new RegExp(`^${category}$`, "i") // ✅ safer
+      query.category = new RegExp(`^${category}$`, "i")
     }
 
     /* =========================
        💰 PRICE
     ========================= */
+
     if (minPrice || maxPrice) {
       query["pricing.price"] = {}
-      if (minPrice) query["pricing.price"].$gte = Number(minPrice)
-      if (maxPrice) query["pricing.price"].$lte = Number(maxPrice)
+
+      if (minPrice) {
+        query["pricing.price"].$gte = Number(minPrice)
+      }
+
+      if (maxPrice) {
+        query["pricing.price"].$lte = Number(maxPrice)
+      }
     }
 
     /* =========================
        🛏 ROOMS
     ========================= */
+
     if (minRooms || maxRooms) {
       const valueQuery = {}
-      if (minRooms) valueQuery.$gte = Number(minRooms)
-      if (maxRooms) valueQuery.$lte = Number(maxRooms)
+
+      if (minRooms) {
+        valueQuery.$gte = Number(minRooms)
+      }
+
+      if (maxRooms) {
+        valueQuery.$lte = Number(maxRooms)
+      }
 
       query.features = {
         $elemMatch: {
@@ -740,45 +969,86 @@ export const getAllProperty = async (req, res) => {
     }
 
     /* =========================
-       🚧 STATUS
+       🔥 APPLY OR CONDITIONS
     ========================= */
-    // if (status) {
-    //   query.status = status
-    // }
 
-    /* =========================
-       🔥 APPLY $or (ONCE ONLY)
-    ========================= */
     if (orConditions.length) {
       query.$or = orConditions
     }
 
     /* =========================
-       SORT
+       📄 PAGINATION
     ========================= */
-    let sortOption = {}
-    if (sort === "price_asc") sortOption = { "pricing.price": 1 }
-    else if (sort === "price_desc") sortOption = { "pricing.price": -1 }
-    else sortOption = { createdAt: -1 }
 
-    /* =========================
-       PAGINATION
-    ========================= */
     const skip = (page - 1) * limit
 
     /* =========================
-       EXECUTE
+       🔃 SORTING
     ========================= */
 
+    const sortMap = {
+      newest: { createdAt: -1 },
+      oldest: { createdAt: 1 },
+      price_asc: { "pricing.price": 1 },
+      price_desc: { "pricing.price": -1 }
+    }
 
-    const properties = await Propert.find({status: 'approved', ...query})
-      .sort(sortOption)
-      .skip(skip)
-      .limit(limit)
-   
-    
-    const total = await Propert.countDocuments(query)
- console.log(total);
+    const sortOption = sortMap[sort] || {
+      createdAt: -1
+    }
+
+    /* =========================
+       🚀 EXECUTE
+    ========================= */
+
+    let properties = []
+
+    // RANDOM RESULTS EVERY FETCH
+    if (sort === "random") {
+
+      properties = await Propert.aggregate([
+        {
+          $match: {
+            status: "approved",
+            ...query
+          }
+        },
+
+        // random documents every request
+        {
+          $sample: {
+            size: limit
+          }
+        }
+      ])
+
+    } else {
+
+      // NORMAL SORTING
+      properties = await Propert.find({
+        status: "approved",
+        ...query
+      })
+        .sort(sortOption)
+        .skip(skip)
+        .limit(limit)
+    }
+
+    /* =========================
+       📊 TOTAL
+    ========================= */
+
+    const total = await Propert.countDocuments({
+      status: "approved",
+      ...query
+    })
+
+    console.log(total)
+
+    /* =========================
+       ✅ RESPONSE
+    ========================= */
+
     return res.status(200).json({
       success: true,
       results: properties.length,
@@ -798,8 +1068,7 @@ export const getAllProperty = async (req, res) => {
     })
   }
 }
-
-export const getAllPropertys = async (req, res) => {
+export const getAPropertys = async (req, res) => {
   try {
     let {
       search,
