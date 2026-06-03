@@ -504,15 +504,15 @@ export const getAllAgents = async (req, res) => {
 
 export const getAgent = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params
 
-    const isValidId = mongoose.Types.ObjectId.isValid(id);
+    const isValidId = mongoose.Types.ObjectId.isValid(id)
 
     if (!isValidId) {
       return res.status(404).json({
         success: false,
         message: "User not found",
-      });
+      })
     }
 
     const agent = await Usertp.aggregate([
@@ -522,10 +522,12 @@ export const getAgent = async (req, res) => {
         },
       },
 
-      // 🔗 Join Others
+      // ==========================
+      // JOIN OTHER PROFILE DATA
+      // ==========================
       {
         $lookup: {
-          from: "others", // collection name (must be lowercase plural in MongoDB)
+          from: "others",
           localField: "_id",
           foreignField: "userId",
           as: "other",
@@ -539,17 +541,63 @@ export const getAgent = async (req, res) => {
         },
       },
 
-      // 🔗 Join Properties
+      // ==========================
+      // ONLY ACTIVE PROPERTIES
+      // ==========================
       {
         $lookup: {
-          from: "properts", // ⚠️ check your actual collection name
-          localField: "_id",
-          foreignField: "userId",
+          from: "properts",
+          let: {
+            userId: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$userId", "$$userId"],
+                    },
+                    {
+                      $eq: ["$status", "active"],
+                    },
+                  ],
+                },
+              },
+            },
+
+            // latest first
+            {
+              $sort: {
+                createdAt: -1,
+              },
+            },
+
+            // remove unnecessary fields
+            {
+              $project: {
+                __v: 0,
+              },
+            },
+          ],
           as: "properties",
         },
       },
 
-      // 🧹 Remove sensitive fields
+      // ==========================
+      // PROPERTY COUNT
+      // ==========================
+      {
+        $addFields: {
+          propertyCount: {
+            $size: "$properties",
+          },
+        },
+      },
+
+      // ==========================
+      // REMOVE SENSITIVE DATA
+      // ==========================
       {
         $project: {
           password: 0,
@@ -570,11 +618,16 @@ export const getAgent = async (req, res) => {
         },
       },
 
-      // 🧩 Merge user + other
+      // ==========================
+      // MERGE USER + OTHER
+      // ==========================
       {
         $addFields: {
           merged: {
-            $mergeObjects: ["$$ROOT", "$other"],
+            $mergeObjects: [
+              "$$ROOT",
+              "$other",
+            ],
           },
         },
       },
@@ -584,22 +637,25 @@ export const getAgent = async (req, res) => {
           newRoot: "$merged",
         },
       },
-    ]);
+    ])
 
     if (!agent.length) {
       return res.status(404).json({
         success: false,
         message: "User not found",
-      });
+      })
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: agent[0],
-    });
-
+    })
   } catch (error) {
-    // console.error(error);
-    res.status(500).json({ message: "Server error" });
+    console.error(error)
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    })
   }
-};
+}
