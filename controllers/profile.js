@@ -401,7 +401,7 @@ export const getAllAgents = async (req, res) => {
       /* ONLY ACTIVE PROPERTIES */
       {
         $match: {
-          status: "active"
+          status: "approved"
         }
       },
 
@@ -630,7 +630,7 @@ export const getAgent = async (req, res) => {
                       $eq: ["$userId", "$$userId"],
                     },
                     {
-                      $eq: ["$status", "active"],
+                      $eq: ["$status", "approved"],
                     },
                   ],
                 },
