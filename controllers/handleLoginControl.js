@@ -88,13 +88,13 @@ export const handleLogin = async (req, res) => {
       foundUser.refreshToken = refreshToken;
       await foundUser.save();
 
-      // Set HTTP-only cookie
-        // res.cookie('jwt', refreshToken, {
-        //    httpOnly: true,
-        //    secure: false, // localhost
-        //    sameSite: 'lax', // important
-        //   maxAge: 24 * 60 * 60 * 1000,
-        //   });
+      // // Set HTTP-only cookie
+      //   res.cookie('jwt', refreshToken, {
+      //      httpOnly: true,
+      //      secure: false, // localhost
+      //      sameSite: 'lax', // important
+      //     maxAge: 24 * 60 * 60 * 1000,
+      //     });
 
        res.cookie('jwt', result.refreshToken, {
             httpOnly: true,
@@ -124,7 +124,7 @@ export const handleLogin = async (req, res) => {
                 return res.status(200).json({ url });
   }
   } catch (err) {
-  
+    console.error("Login error:", err);
     res.status(500).json({ message: "Server error. Please try again." });
   }
 };
@@ -139,12 +139,12 @@ export const googleCallback = async (req, res) => {
         console.log( result.refreshToken);
         
         // Save refresh token in cookie
-        // res.cookie('jwt', result.refreshToken, {
-          //  httpOnly: true,
-          //  secure: false, // localhost
-          //  sameSite: 'lax', // important
-          // maxAge: 24 * 60 * 60 * 1000,
-          // });
+        res.cookie('jwt', result.refreshToken, {
+           httpOnly: true,
+           secure: false, // localhost
+           sameSite: 'lax', // important
+          maxAge: 24 * 60 * 60 * 1000,
+          });
           // for Prodduct
 //           res.cookie('jwt', result.refreshToken, {
 //     httpOnly: true,
@@ -152,12 +152,12 @@ export const googleCallback = async (req, res) => {
 //     sameSite: 'none',
 //     maxAge: 24 * 60 * 60 * 1000,
 // });
-        res.cookie('jwt', result.refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'none',
-            maxAge: 24 * 60 * 60 * 1000,
-        });
+        // res.cookie('jwt', result.refreshToken, {
+        //     httpOnly: true,
+        //     secure: process.env.NODE_ENV === 'production',
+        //     sameSite: 'none',
+        //     maxAge: 24 * 60 * 60 * 1000,
+        // });
 
         // Redirect to frontend with access token
         return res.redirect(
@@ -228,7 +228,7 @@ export const updatePassword = async (req, res) => {
       message: "Password reset successful"
     })
   } catch (error) {
-   
+    console.error("Password update error:", error);
 
     return res.status(500).json({
       success: false,
