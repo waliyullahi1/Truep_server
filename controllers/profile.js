@@ -395,9 +395,17 @@ const sendOtp = async () => {
 
 export const getAllAgents = async (req, res) => {
   try {
+
     const agents = await Propert.aggregate([
-      
-      /* 1️⃣ GROUP PROPERTIES */
+
+      /* ONLY ACTIVE PROPERTIES */
+      {
+        $match: {
+          status: "active"
+        }
+      },
+
+      /* GROUP ACTIVE PROPERTIES BY USER */
       {
         $group: {
           _id: "$userId",
@@ -405,7 +413,7 @@ export const getAllAgents = async (req, res) => {
         }
       },
 
-      /* 2️⃣ USER JOIN */
+      /* USER JOIN */
       {
         $lookup: {
           from: "usertps",
@@ -414,9 +422,12 @@ export const getAllAgents = async (req, res) => {
           as: "user"
         }
       },
-      { $unwind: "$user" },
 
-      /* 3️⃣ OTHERS JOIN */
+      {
+        $unwind: "$user"
+      },
+
+      /* OTHERS JOIN */
       {
         $lookup: {
           from: "others",
@@ -425,6 +436,7 @@ export const getAllAgents = async (req, res) => {
           as: "other"
         }
       },
+
       {
         $unwind: {
           path: "$other",
@@ -432,58 +444,116 @@ export const getAllAgents = async (req, res) => {
         }
       },
 
-      /* 4️⃣ CLEAN DATA FOR FRONTEND */
+      /* CLEAN DATA */
       {
         $project: {
           _id: 0,
+
           userId: "$_id",
+
           totalProperties: 1,
 
-          /* ✅ SAFE NAME */
           name: {
             $ifNull: [
               "$other.name",
-              { $concat: ["$user.firstName", " ", "$user.lastName"] }
+              {
+                $concat: [
+                  "$user.firstName",
+                  " ",
+                  "$user.lastName"
+                ]
+              }
             ]
           },
 
           firstName: "$user.firstName",
           lastName: "$user.lastName",
 
-          email: "$user.email",
+         
           phone: "$user.phone",
+
           avatar: "$user.avatar",
+
           role: "$user.roles",
-          whatsapp_no: { $ifNull: ["$user.whatsapp_no", ""] },
-          /* ✅ SAFE LOCATION */
-          location: {
-            country: { $ifNull: ["$user.location.country", "Nigeria"] },
-            state: { $ifNull: ["$user.location.state", ""] },
-            city: { $ifNull: ["$user.location.city", ""] },
-            address: { $ifNull: ["$user.location.address", ""] }
+
+          whatsapp_no: {
+            $ifNull: [
+              "$user.whatsapp_no",
+              ""
+            ]
           },
 
-          /* ✅ SAFE OTHERS DATA */
-          about: { $ifNull: ["$other.about", ""] },
-            social_media: { $ifNull: ["$other.social_media", ""] },
-          
+          location: {
+            country: {
+              $ifNull: [
+                "$user.location.country",
+                "Nigeria"
+              ]
+            },
+
+            state: {
+              $ifNull: [
+                "$user.location.state",
+                ""
+              ]
+            },
+
+            city: {
+              $ifNull: [
+                "$user.location.city",
+                ""
+              ]
+            },
+
+            address: {
+              $ifNull: [
+                "$user.location.address",
+                ""
+              ]
+            }
+          },
+
+          about: {
+            $ifNull: [
+              "$other.about",
+              ""
+            ]
+          },
+
+          social_media: {
+            $ifNull: [
+              "$other.social_media",
+              ""
+            ]
+          },
+
           skills: {
-            $ifNull: ["$other.skills", []]
+            $ifNull: [
+              "$other.skills",
+              []
+            ]
           },
 
           workExperience: {
-            $ifNull: ["$other.workExperience", []]
+            $ifNull: [
+              "$other.workExperience",
+              []
+            ]
           },
 
           languages: {
-            $ifNull: ["$other.languages", []]
+            $ifNull: [
+              "$other.languages",
+              []
+            ]
           }
         }
       },
 
-      /* 5️⃣ SORT */
       {
-        $sort: { totalProperties: -1 }
+        $sort: {
+          totalProperties: -1
+        }
       }
 
     ])
@@ -495,8 +565,9 @@ export const getAllAgents = async (req, res) => {
     })
 
   } catch (error) {
-    // console.error("GET AGENTS ERROR:", error)
-    res.status(500).json({ message: "Server error" })
+    res.status(500).json({
+      message: "Server error"
+    })
   }
 }
 
