@@ -96,7 +96,7 @@ export const handleLogin = async (req, res) => {
       //     maxAge: 24 * 60 * 60 * 1000,
       //     });
 
-       res.cookie('jwt', result.refreshToken, {
+       res.cookie('jwt', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'none',
