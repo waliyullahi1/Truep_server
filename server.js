@@ -42,8 +42,8 @@ app.use(logger)
 // CORS configuration
 const corsOptions = {
   origin: [
-    "https://virex.codes",
-    "https://www.virex.codes",
+    "https://www.abanise.com",
+    "https://abanise.com",
     "http://localhost:3000",
     "https://truep-lpag.vercel.app"
   ],
