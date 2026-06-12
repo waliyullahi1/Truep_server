@@ -31,6 +31,8 @@ export const updateKyc = async (req, res) => {
       businessName,
       cacNumber,      forceUpdateNin
     } = req.body;
+    console.log(faceVector, 'faceVector');
+    console.log(req.files, 'req.files');
      const user = await Usertp.findById(userId);
       if (!user) {
         return res.status(404).json({success: false, message: ""});
