@@ -20,6 +20,7 @@ import connectDB from "./config/db.js"
 
 
 import authRoute from "./route/api/auth.js"
+import inspectRoute from "./route/api/inpection.js"
 import  rootRoute from "./route/root.js"
 import profileRoutes from "./route/api/profile.js"
 import propertRoutes from "./route/api/property.js"
@@ -68,7 +69,7 @@ app.use("/profile", profileRoutes)
 app.use("/property", propertRoutes)
 app.use("/kyc", kycRoutes)
 app.use("/admin", adminRoutes)
-
+app.use("/inspection", inspectRoute)
 
 // Test route
 app.get(

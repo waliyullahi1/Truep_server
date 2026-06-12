@@ -281,12 +281,10 @@ export const getPropertyById = async (req, res) => {
        console.log();
        
         const decoded = jwt.verify(token,  process.env.REFRESH_TOKEN_SECRETY,);
-        console.log(decoded, property.userId._id.toString(), 'property.userId._id.toString()');
-        
-        // Convert to string to avoid ObjectId vs string issues
+   // Convert to string to avoid ObjectId vs string issues
         if (decoded.id.toString() === property.userId._id.toString()) {
           isOwner = true;
-          console.log("User is the owner of this property");
+         
         }
       } catch (err) {
         // Invalid/expired token should NOT break this route
@@ -640,7 +638,7 @@ export const getAllProperty = async (req, res) => {
       maxRooms,
       type,
       page = 1,
-      limit = 10,
+      limit = 20,
       sort = "random"
     } = req.query
 
@@ -811,7 +809,7 @@ export const getAllProperty = async (req, res) => {
       status: "approved",
       ...query
     })
-
+    console.log(total);
     /* =========================
        RESPONSE
     ========================= */

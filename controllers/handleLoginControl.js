@@ -88,20 +88,20 @@ export const handleLogin = async (req, res) => {
       foundUser.refreshToken = refreshToken;
       await foundUser.save();
 
-      // // Set HTTP-only cookie
-      //   res.cookie('jwt', refreshToken, {
-      //      httpOnly: true,
-      //      secure: false, // localhost
-      //      sameSite: 'lax', // important
-      //     maxAge: 24 * 60 * 60 * 1000,
-      //     });
+      // Set HTTP-only cookie
+        res.cookie('jwt', refreshToken, {
+           httpOnly: true,
+           secure: false, // localhost
+           sameSite: 'lax', // important
+          maxAge: 24 * 60 * 60 * 1000,
+          });
 
-       res.cookie('jwt', refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'none',
-            maxAge: 24 * 60 * 60 * 1000,
-        });
+      //  res.cookie('jwt', refreshToken, {
+      //       httpOnly: true,
+      //       secure: process.env.NODE_ENV === 'production',
+      //       sameSite: 'none',
+      //       maxAge: 24 * 60 * 60 * 1000,
+      //   });
 
       // Send access token
       res.status(200).json({ data: foundUser  });
