@@ -623,216 +623,604 @@ export const deletePropertyImage = async (req, res) => {
 ===================================================== */
 
 export const getAllProperty = async (req, res) => {
+
   try {
 
-    let {
-      search,
-      category,
-      location,
-      purpose,
-      state,
-      city,
-      minPrice,
-      maxPrice,
-      minRooms,
-      maxRooms,
-      type,
-      page = 1,
+
+    let { search,  category, location,   purpose,  state, city,  school,   maxPrice,  minRooms, maxRooms,  type, page = 1,
+
       limit = 20,
+
       sort = "random"
+
+
     } = req.query
+    console.log(school, 'school');
+    
+
+
+
 
     page = Number(page)
+
     limit = Number(limit)
 
+
+
+
+
     const query = {}
+
     const orConditions = []
+
+
+
+
+
 
     /* =========================
        SEARCH
     ========================= */
 
-    if (search) {
+
+    if(search){
+
+
       orConditions.push(
-        { title: { $regex: search, $options: "i" } },
-        { "location.address": { $regex: search, $options: "i" } },
-        { "location.city": { $regex: search, $options: "i" } },
-        { "location.state": { $regex: search, $options: "i" } },
-        { "location.lga": { $regex: search, $options: "i" } }
+
+
+        {
+          title:{
+            $regex:search,
+            $options:"i"
+          }
+        },
+
+
+        {
+          "location.address":{
+            $regex:search,
+            $options:"i"
+          }
+        },
+
+
+        {
+          "location.city":{
+            $regex:search,
+            $options:"i"
+          }
+        },
+
+
+        {
+          "location.state":{
+            $regex:search,
+            $options:"i"
+          }
+        },
+
+
+        {
+          "location.lga":{
+            $regex:search,
+            $options:"i"
+          }
+        },
+
+
+        // ✅ search school name
+        {
+          "hostelDetails.school.name":{
+            $regex:search,
+            $options:"i"
+          }
+        },
+
+
+        // ✅ search school abbreviation
+        {
+          "hostelDetails.school.abbreviation":{
+            $regex:search,
+            $options:"i"
+          }
+        }
+
+
       )
+
     }
+
+
+
+
+
+
+
+
 
     /* =========================
        LOCATION
     ========================= */
 
-    if (state) {
-      query["location.state"] = new RegExp(`^${state}$`, "i")
+
+    if(state){
+
+
+      query["location.state"] =
+      new RegExp(`^${state}$`,"i")
+
+
     }
 
-    if (city) {
-      query["location.city"] = new RegExp(`^${city}$`, "i")
+
+
+
+
+    if(city){
+
+
+      query["location.city"] =
+      new RegExp(`^${city}$`,"i")
+
+
     }
 
-    if (location && !state && !city) {
+
+
+
+
+
+    if(location && !state && !city){
+
+
       orConditions.push(
-        { "location.address": { $regex: location, $options: "i" } },
-        { "location.city": { $regex: location, $options: "i" } },
-        { "location.state": { $regex: location, $options: "i" } },
-        { "location.lga": { $regex: location, $options: "i" } }
+
+
+        {
+          "location.address":{
+            $regex:location,
+            $options:"i"
+          }
+        },
+
+
+        {
+          "location.city":{
+            $regex:location,
+            $options:"i"
+          }
+        },
+
+
+        {
+          "location.state":{
+            $regex:location,
+            $options:"i"
+          }
+        },
+
+
+        {
+          "location.lga":{
+            $regex:location,
+            $options:"i"
+          }
+        }
+
+
       )
+
+
     }
+
+
+
+
+
+
+
+
 
     /* =========================
        TYPE
     ========================= */
 
-    if (type) {
-      query.type = type.toLowerCase()
+
+    if(type){
+
+
+      query.type =
+      type.toLowerCase()
+
+
     }
+
+
+
+
+
+
+
+
 
     /* =========================
        PURPOSE
     ========================= */
 
-    if (purpose) {
-      query.purpose = new RegExp(`^${purpose}$`, "i")
+
+    if(purpose){
+
+
+      query.purpose =
+      new RegExp(`^${purpose}$`,"i")
+
+
     }
+
+
+
+
+
+
+
+
 
     /* =========================
        CATEGORY
     ========================= */
 
-    if (category && category !== "All") {
-      query.category = new RegExp(`^${category}$`, "i")
+
+    if(category && category !== "All"){
+
+
+      query.category =
+      new RegExp(`^${category}$`,"i")
+
+
     }
+
+
+
+
+
+
+
+
+
+    /* =========================
+       HOSTEL SCHOOL FILTER
+    ========================= */
+
+
+    if(school){
+
+
+      query[
+        "hostelDetails.school.abbreviation"
+      ] =
+
+      new RegExp(`^${school}$`,"i")
+
+
+    }
+
+
+
+
+
+
+
+
 
     /* =========================
        PRICE
     ========================= */
 
-    if (minPrice || maxPrice) {
+
+    if(minPrice || maxPrice){
+
 
       query["pricing.price"] = {}
 
-      if (minPrice) {
-        query["pricing.price"].$gte = Number(minPrice)
+
+
+      if(minPrice){
+
+
+        query["pricing.price"].$gte =
+        Number(minPrice)
+
+
       }
 
-      if (maxPrice) {
-        query["pricing.price"].$lte = Number(maxPrice)
+
+
+
+      if(maxPrice){
+
+
+        query["pricing.price"].$lte =
+        Number(maxPrice)
+
+
       }
+
+
     }
+
+
+
+
+
+
+
+
 
     /* =========================
        BEDROOMS
     ========================= */
 
-    if (minRooms || maxRooms) {
+
+    if(minRooms || maxRooms){
+
 
       const valueQuery = {}
 
-      if (minRooms) {
-        valueQuery.$gte = Number(minRooms)
+
+
+      if(minRooms){
+
+
+        valueQuery.$gte =
+        Number(minRooms)
+
+
       }
 
-      if (maxRooms) {
-        valueQuery.$lte = Number(maxRooms)
+
+
+
+      if(maxRooms){
+
+
+        valueQuery.$lte =
+        Number(maxRooms)
+
+
       }
+
+
+
+
 
       query.features = {
-        $elemMatch: {
-          key: "bedroom",
-          value: valueQuery
+
+
+        $elemMatch:{
+
+
+          key:"bedroom",
+
+
+          value:valueQuery
+
+
         }
+
+
       }
+
+
     }
+
+
+
+
+
+
+
+
 
     /* =========================
        APPLY OR
     ========================= */
 
-    if (orConditions.length) {
-      query.$or = orConditions
+
+    if(orConditions.length){
+
+
+      query.$or =
+      orConditions
+
+
     }
+
+
+
+
+
+
+
+
 
     /* =========================
        PAGINATION
     ========================= */
 
-    const skip = (page - 1) * limit
+
+    const skip =
+    (page - 1) * limit
+
+
+
+
+
+
 
     /* =========================
-       SORT OPTIONS
+       SORT
     ========================= */
+
 
     const sortMap = {
-      newest: { createdAt: -1 },
 
-      oldest: { createdAt: 1 },
 
-      price_asc: {
-        "pricing.price": 1
+      newest:{
+        createdAt:-1
       },
 
-      price_desc: {
-        "pricing.price": -1
+
+      oldest:{
+        createdAt:1
       },
 
-      // persistent random order
-      random: {
-        randomOrder: 1
+
+      price_asc:{
+        "pricing.price":1
+      },
+
+
+      price_desc:{
+        "pricing.price":-1
+      },
+
+
+      random:{
+        randomOrder:1
       }
+
+
     }
 
-    const sortOption = sortMap[sort] || {
-      randomOrder: 1
+
+
+
+
+    const sortOption =
+    sortMap[sort] || {
+
+      randomOrder:1
+
     }
+
+
+
+
+
+
+
+
 
     /* =========================
-       EXECUTE
+       GET DATA
     ========================= */
 
+
     const properties = await Propert.find({
-      status: "approved",
+
+
+      status:"approved",
+
+
       ...query
+
+
     })
-      .sort(sortOption)
-      .skip(skip)
-      .limit(limit)
+
+    .sort(sortOption)
+
+    .skip(skip)
+
+    .limit(limit)
+
+
+
+
+
+
+
+
 
     /* =========================
        TOTAL
     ========================= */
 
+
     const total = await Propert.countDocuments({
-      status: "approved",
+
+
+      status:"approved",
+
+
       ...query
+
+
     })
-    console.log(total);
-    /* =========================
-       RESPONSE
-    ========================= */
+
+
+
+
+
+
+
 
     return res.status(200).json({
-      success: true,
-      results: properties.length,
+
+
+      success:true,
+
+
+      results:properties.length,
+
+
       total,
+
+
       page,
-      pages: Math.ceil(total / limit),
-      data: properties
+
+
+      pages:Math.ceil(total / limit),
+
+
+      data:properties
+
+
     })
 
-  } catch (error) {
 
-    console.error("PROPERTY ERROR:", error)
+
+
+
+  } catch(error){
+
+
+
+    console.error(
+      "PROPERTY ERROR:",
+      error
+    )
+
+
 
     return res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message
+
+
+      success:false,
+
+
+      message:"Server error",
+
+
+      error:error.message
+
+
     })
+
+
   }
+
+
 }
 export const getAllPropertyss = async (req, res) => {
   try {
