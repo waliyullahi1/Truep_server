@@ -627,7 +627,33 @@ export const getAllProperty = async (req, res) => {
   try {
 
 
-    let { search,  category, location,   purpose,  state, city,  school,   maxPrice,  minRooms, maxRooms,  type, page = 1,
+    let {
+
+      search,
+
+      category,
+
+      location,
+
+      purpose,
+
+      state,
+
+      city,
+
+      school, // ✅ NEW SCHOOL FILTER
+
+      minPrice,
+
+      maxPrice,
+
+      minRooms,
+
+      maxRooms,
+
+      type,
+
+      page = 1,
 
       limit = 20,
 
