@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router()
-import { updateAvater, getpropertybyUser, getAllAgents, getAgent, getAvatar, sendSMS,  getuser, updateProfile } from "../../controllers/profile.js";
+import { updateAvater, getAgentSitemap, getpropertybyUser, getAllAgents, getAgent, getAvatar, sendSMS,  getuser, updateProfile } from "../../controllers/profile.js";
 import { protect} from "../../middleware/auth.js";
 import uploadAvatar from "../../middleware/upload.js"
 
@@ -15,6 +15,8 @@ router.post("/sendsms", protect, sendSMS)
 
 
 router.get("/agents/:id", getAgent)
+
+router.get("/sitemap", getAgentSitemap)
 export default router;
 
 

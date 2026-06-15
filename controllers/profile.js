@@ -570,6 +570,56 @@ export const getAllAgents = async (req, res) => {
     })
   }
 }
+export const getAgentSitemap = async (req, res) => {
+  try {
+    const agents = await Propert.aggregate([
+      {
+        $match: {
+          status: "approved"
+        }
+      },
+
+      {
+        $group: {
+          _id: "$userId",
+          updatedAt: { $max: "$updatedAt" }
+        }
+      },
+
+      {
+        $lookup: {
+          from: "usertps",
+          localField: "_id",
+          foreignField: "_id",
+          as: "user"
+        }
+      },
+
+      {
+        $unwind: "$user"
+      },
+
+      {
+        $project: {
+          _id: 0,
+          userId: "$_id",
+          updatedAt: 1,
+          slug: "$user.slug"
+        }
+      }
+    ])
+
+    return res.status(200).json({
+      success: true,
+      data: agents
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    })
+  }
+}
 
 
 
