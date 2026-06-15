@@ -1635,3 +1635,22 @@ export const getAPropertys = async (req, res) => {
     })
   }
 }
+
+export const getSitemapProperties = async (req, res) => {
+  try {
+    const properties = await Propert.find(
+      { status: "approved" },
+      { slug: 1, updatedAt: 1 }
+    ).lean()
+
+    return res.status(200).json({
+      success: true,
+      data: properties
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    })
+  }
+}
