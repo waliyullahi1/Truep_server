@@ -26,6 +26,7 @@ import profileRoutes from "./route/api/profile.js"
 import propertRoutes from "./route/api/property.js"
 import kycRoutes from "./route/api/kyc.js"
 import adminRoutes from "./route/api/admin.js"
+import pingRoutes from "./route/ping.js"
 const app = express()
 
 const PORT = process.env.PORT || 5000
@@ -70,6 +71,7 @@ app.use("/property", propertRoutes)
 app.use("/kyc", kycRoutes)
 app.use("/admin", adminRoutes)
 app.use("/inspection", inspectRoute)
+app.use('/ping', pingRoutes);
 
 // Test route
 app.get(
