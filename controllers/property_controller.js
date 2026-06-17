@@ -1708,7 +1708,7 @@ deviceScaleFactor:1
 
 await page.goto(
 
-`http://localhost:3000/ogImage/${propertyId}`,
+`${process.env.FRONTEND_BASE_URL}/ogImage/${propertyId}`,
 
 {
 
