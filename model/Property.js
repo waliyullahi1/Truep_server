@@ -8,11 +8,19 @@ const ImageSchema = new Schema({
   public_id: String,
   type: {
     type: String,
-    enum: ['image', 'survey', 'titleDocs'],
+    enum: ['image', 'survey', 'titleDocs', 'ogimage'],
     default: 'image'
   }
 }, { timestamps: true });
 
+/* ================= OG-image SCHEMA ================= */
+const OgImageSchema = new Schema({
+  image: ImageSchema,
+  previews_template: {
+    type: String,
+    default: ""
+  }
+});
 /* ================= MAIN PROPERTY SCHEMA ================= */
 const PropertSchema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: "Usertp", required: true },
@@ -23,7 +31,7 @@ const PropertSchema = new Schema({
   type: { type: String, enum: ["land", "house","hostel"], required: true },
   purpose: { type: String, enum: ["sale", "rent"], required: true },
   category: { type: String, required: true },
-
+  ogimage:OgImageSchema,
   pricing: {
   price: {
     type: Number,

@@ -7,16 +7,15 @@ import axios from 'axios';
 export const protect = async (req, res, next) => {
   let token;
  
-  console.log(req.cookies, ' it  try to check authentification');
+
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
 
   else if (req.cookies && req.cookies.token) {
-  console.log(' it  try to check authentification');
+
     token = req.cookies.jwt;
-    
-    console.log('token is providede', token);
+
     if (!token) {
       token = req.cookies.jwt
     }
@@ -28,7 +27,7 @@ export const protect = async (req, res, next) => {
 
   }
   token = req.cookies.jwt 
- console.log(' it  try to check authentification');
+
  
   if (!token) {
     return res.status(401).json({ message: 'Not authorized, no token' });
@@ -125,16 +124,16 @@ export const protect = async (req, res, next) => {
 export const admin = async (req, res, next) => {
   let token;
  
-  console.log(req.cookies, ' it  try to check authentification');
+
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
 
   else if (req.cookies && req.cookies.token) {
-  console.log(' it  try to check authentification');
+  
     token = req.cookies.jwt;
     
-    console.log('token is providede', token);
+   
     if (!token) {
       token = req.cookies.jwt
     }
@@ -146,11 +145,10 @@ export const admin = async (req, res, next) => {
 
   }
   token = req.cookies.jwt 
- console.log(' it  try to check authentification');
+
  
   if (!token) {
-    console.log('ffaaaa');
-    
+  
     return res.status(401).json({ message: 'Not authorized, no token' });
   }
  
@@ -166,14 +164,14 @@ export const admin = async (req, res, next) => {
       const user = await Usertp.findById(decoded.id);
 
       if (!user) {
-        console.log('this place');
+
         
         return res.status(401).json({ message: 'User not found' });
       }
       
       // Check if user is active
       if (user.roles !== 'Admin') {
-        console.log('admin prolem');
+       
         
         return next(new ErrorResponse('Error', 402));
       }
@@ -191,7 +189,7 @@ export const admin = async (req, res, next) => {
       
       return next();
     } catch (jwtError) {
-        console.log('error now');
+       
       // If JWT verification fails, try to verify as Google access token
       try {
         // Verify Google access token with Google's API

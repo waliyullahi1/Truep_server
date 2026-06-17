@@ -38,7 +38,7 @@
     "npm": "^11.11.1",
     "ntp-client": "^0.5.3",
     "punycode": "^2.3.1",
-    "puppeteer": "^24.10.2",
+    "puppeteer": "^24.43.1",
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "run": "^1.5.0",

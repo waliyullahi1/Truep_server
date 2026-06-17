@@ -5,6 +5,7 @@ import { uploadToCloudinary, deleteFromCloudinary } from "../utils/upload.js";
 import jwt from 'jsonwebtoken'; 
 import mongoose from 'mongoose'
 import slugify from "slugify"
+import puppeteer from "puppeteer"
 
 
 /* =====================================================
@@ -149,7 +150,7 @@ export const updateproperty = async (req, res) => {
     })
 
   } catch (error) {
-    console.error("PROPERTY ERROR:", error)
+   
 
     return res.status(500).json({
       success: false,
@@ -233,7 +234,7 @@ export const updatePropertyStatus = async (req, res) => {
     })
 
   } catch (error) {
-    console.error('UPDATE PROPERTY STATUS ERROR:', error)
+    
 
     return res.status(500).json({
       success: false,
@@ -254,7 +255,7 @@ export const getPropertyById = async (req, res) => {
         // it is slogan pass here
           property = await Propert.findOne({ slug: id }).populate("userId");
         }
-        console.log(property);
+       
         
 
     } else{
@@ -278,7 +279,7 @@ export const getPropertyById = async (req, res) => {
 
     if (token) {
       try {
-       console.log();
+       
        
         const decoded = jwt.verify(token,  process.env.REFRESH_TOKEN_SECRETY,);
    // Convert to string to avoid ObjectId vs string issues
@@ -334,11 +335,10 @@ export const PropertyupdateImage = async (req, res) => {
     // Ensure structure
     if (!property.media) property.media = { files: [] };
     if (!property.media.files) property.media.files = [];
-      console.log( 'gggggg');
-        console.log( 'gggggg');
+     
     // Upload to cloudinary
     const result = await uploadToCloudinary(req.file, type);
-    console.log(result, 'gggggg');
+  
     
     const newFile = {
       url: result.secure_url,
@@ -448,7 +448,7 @@ export const getPropertyByUser = async (req, res) => {
 export const deletePropertyImages = async (req, res) => {
   try {
     const id = req.params.id;
-    console.log(id);
+  
 
     // Make sure to use 'userId' instead of 'user'
     const property = await Propert.findOne({ _id: id, userId: req.user._id });
@@ -459,13 +459,13 @@ export const deletePropertyImages = async (req, res) => {
         message: "Property not found",
       });
     }
-    console.log('fffff', req.body.id);
+   
 
     if (!req.body.id) return res.status(400).json({ message: "not not found", })
 
 
     const image = property.media.images.id(req.body.id);
-    console.log("sdfdf", image);
+    
     if (!image) return res.status(400).json({ message: "not not found", })
     if (image.public_id) {
       await deleteFromCloudinary(image.public_id)
@@ -512,7 +512,7 @@ export const deleteProperty = async (req, res) => {
 
         if (property.media?.files?.length) {
       for (const img of property.media.files) {
-        console.log(img);
+       
           if (img.public_id) {
             await deleteFromCloudinary(img.public_id)
           }
@@ -529,7 +529,7 @@ export const deleteProperty = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("DELETE PROPERTY ERROR:", error);
+    
     return res.status(500).json({
       success: false,
       message: "Server error",
@@ -542,14 +542,14 @@ export const deletePropertyImage = async (req, res) => {
   try {
     const { id, type } = req.body
     const propertyId = req.params.id
-    console.log(id, type, propertyId);
+  
     if (!id || !type) {
       return res.status(400).json({
         success: false,
         message: "Image id and type are required"
       })
     }
-    console.log(id, type);
+    
 
 
     const property = await Propert.findOne({
@@ -565,7 +565,7 @@ export const deletePropertyImage = async (req, res) => {
     }
 
     const media = property.media || {}
-    console.log();
+    
 
     // validate type
     if (!["image", "survey", "titleDocs"].includes(type)) {
@@ -576,11 +576,11 @@ export const deletePropertyImage = async (req, res) => {
     }
 
     const list = media[type] || []
-    console.log('rechea there');
+   
 
     // find image
     const image = property.media.files.id(id);
-    console.log(image, 'imAGE');
+
     if (!image) {
       return res.status(404).json({
         success: false,
@@ -661,7 +661,7 @@ export const getAllProperty = async (req, res) => {
 
 
     } = req.query
-    console.log(school, 'school');
+    
     
 
 
@@ -1270,13 +1270,6 @@ export const getAllPropertyss = async (req, res) => {
     page = Number(page)
     limit = Number(limit)
 
-    console.log(search, "search")
-    console.log(category, "category")
-    console.log(location, "location")
-    console.log(state, "state")
-    console.log(city, "city")
-    console.log(type, "type")
-    console.log(purpose, "purpose")
 
     const query = {}
     const orConditions = []
@@ -1455,7 +1448,7 @@ export const getAllPropertyss = async (req, res) => {
       ...query
     })
 
-    console.log(total)
+ 
 
     /* =========================
        ✅ RESPONSE
@@ -1471,7 +1464,7 @@ export const getAllPropertyss = async (req, res) => {
     })
 
   } catch (error) {
-    console.error("PROPERTY ERROR:", error)
+    
 
     return res.status(500).json({
       success: false,
@@ -1626,7 +1619,7 @@ export const getAPropertys = async (req, res) => {
     })
 
   } catch (error) {
-    console.error("PROPERTY ERROR:", error)
+    
 
     return res.status(500).json({
       success: false,
@@ -1654,3 +1647,292 @@ export const getSitemapProperties = async (req, res) => {
     })
   }
 }
+
+
+
+
+
+export const generateOGImage = async(propertyId)=>{
+
+let browser
+
+
+try{
+
+
+const property =
+await Propert.findById(propertyId)
+
+console.log(property, 'property');
+
+if(!property){
+
+throw new Error(
+"Invalid property id"
+)
+
+}
+
+
+
+browser =
+await puppeteer.launch({
+
+headless:"new",
+
+args:[
+"--no-sandbox",
+"--disable-setuid-sandbox"
+]
+
+})
+
+
+
+const page =
+await browser.newPage()
+
+
+
+await page.setViewport({
+
+width:1200,
+
+height:630,
+
+deviceScaleFactor:1
+
+})
+
+
+
+await page.goto(
+
+`http://localhost:3000/ogImage/${propertyId}`,
+
+{
+
+waitUntil:"networkidle0",
+
+timeout:60000
+
+}
+
+)
+
+
+
+await page.waitForSelector(
+".og-card",
+{
+timeout:30000
+}
+)
+
+
+
+// wait fonts and images
+
+await page.evaluate(async()=>{
+
+
+await document.fonts.ready
+
+
+
+const images =
+Array.from(
+document.images
+)
+
+
+await Promise.all(
+
+images.map(img=>{
+
+
+if(img.complete)
+return Promise.resolve()
+
+
+return new Promise(resolve=>{
+
+img.onload=resolve
+
+img.onerror=resolve
+
+})
+
+
+})
+
+)
+
+
+})
+
+
+
+
+// screenshot
+
+const imageBuffer =
+await page.screenshot({
+
+type:"png",
+
+clip:{
+
+x:0,
+
+y:0,
+
+width:1200,
+
+height:630
+
+}
+
+})
+
+
+
+
+// delete old image
+
+if(
+property.ogimage?.image?.public_id
+){
+
+await deleteFromCloudinary(
+property.ogimage.image.public_id
+)
+
+}
+
+
+
+// IMPORTANT PART
+// convert Buffer to file object
+
+const file = {
+
+buffer:imageBuffer
+
+}
+
+
+
+// upload
+
+const result =
+await uploadToCloudinary(
+file,
+"og_images"
+)
+
+
+
+
+// save database
+
+property.ogimage = {
+
+image:{
+
+url:result.secure_url,
+
+public_id:result.public_id,
+
+type:"ogimage"
+
+}
+
+}
+
+
+
+await property.save()
+
+
+
+await browser.close()
+
+
+
+return {
+
+url:result.secure_url,
+
+public_id:result.public_id
+
+}
+
+
+
+}catch(error){
+
+
+if(browser)
+await browser.close()
+
+
+throw error
+
+
+}
+
+
+}
+
+export const updateogImage = async (req, res) => {
+  try {
+    
+    const { propertyId} = req.body;
+    
+    
+    const property = await Propert.findById(propertyId);
+
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        message: "Property not found"
+      });
+    }
+
+
+    // Delete old image if it exists
+    if (property.ogimage?.public_id) {
+      await deleteFromCloudinary(property.ogimage.public_id);
+    }
+
+    // Upload new image
+      const result = generateOGImage(propertyId)
+    // Create ogimage object if it doesn't exist
+   
+    
+
+      property.ogimage.image = {
+        url: result.secure_url,
+        public_id: result.public_id,
+        type: "ogimage"
+      };
+
+      property.ogimage.previews_template = previews_template;
+    await property.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "OG image updated successfully",
+      ogimage: property.ogimage
+    });
+
+  } catch (error) {
+   
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+};
