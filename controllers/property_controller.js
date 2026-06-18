@@ -319,6 +319,8 @@ export const getPropertyById = async (req, res) => {
 
 
 
+
+
 export const PropertyupdateImage = async (req, res) => {
   try {
     const { id, type } = req.params;
@@ -1907,7 +1909,7 @@ export const generateOGImage = async (propertyId) => {
 
         {
 
-          waitUntil:"networkidle0",
+          waitUntil:"domcontentloaded",
 
           timeout:60000
 
@@ -2264,4 +2266,91 @@ export const updateogImage = async (req, res) => {
       message: "Server error"
     });
   }
+};
+
+export const getPropertyByIdForOgImg = async (req, res) => {
+
+  try {
+
+    const id = req.params.id;
+
+
+    const isValidId =
+      mongoose.Types.ObjectId.isValid(id);
+
+
+
+    let property;
+
+
+
+    if (!isValidId) {
+
+
+      property =
+        await Propert
+          .findOne({ slug:id })
+          .populate("userId");
+
+
+    } else {
+
+
+      property =
+        await Propert
+          .findById(id)
+          .populate("userId");
+
+
+    }
+
+
+
+
+    if (!property) {
+
+      return res.status(404).json({
+
+        success:false,
+
+        message:"Property not found"
+
+      });
+
+    }
+
+
+
+    return res.status(200).json({
+
+      success:true,
+
+      data:property
+
+    });
+
+
+
+  } catch(error){
+
+
+    console.error(
+      "PROPERTY ERROR:",
+      error
+    );
+
+
+    return res.status(500).json({
+
+      success:false,
+
+      message:"Server error",
+
+      error:error.message
+
+    });
+
+
+  }
+
 };
