@@ -1655,13 +1655,14 @@ export const getSitemapProperties = async (req, res) => {
 export const generateOGImage = async (propertyId) => {
 
   let browser;
-
+  console.log('broswer is opening......');
+  
   try {
 
     const property = await Propert.findById(propertyId);
 
 
-
+ console.log('broswer is opening......2');
     if (!property) {
 
       throw new Error("Invalid property id");
@@ -1675,7 +1676,7 @@ export const generateOGImage = async (propertyId) => {
         : undefined;
 
 
-
+console.log('broswer is opening......3', executablePath);
     browser = await puppeteer.launch({
 
       headless: true,
@@ -1696,11 +1697,11 @@ export const generateOGImage = async (propertyId) => {
 
     });
 
-
+console.log('broswer is opening......4');
 
     const page = await browser.newPage();
 
-
+console.log('broswer is opening......5');
 
     await page.setViewport({
 
@@ -1711,7 +1712,7 @@ export const generateOGImage = async (propertyId) => {
       deviceScaleFactor: 1
 
     });
-
+console.log('broswer is opening......6');
 
     await page.goto(
 
@@ -1728,7 +1729,7 @@ export const generateOGImage = async (propertyId) => {
     );
 
 
-
+console.log('broswer is opening......7');
     await page.waitForSelector(
 
       ".og-card",
@@ -1741,7 +1742,7 @@ export const generateOGImage = async (propertyId) => {
 
     );
 
-
+console.log('broswer is opening......8');
 
     // wait fonts and images
 
@@ -1787,7 +1788,7 @@ export const generateOGImage = async (propertyId) => {
     });
 
 
-
+console.log('broswer is opening......9');
     const imageBuffer = await page.screenshot({
 
       type:"png",
@@ -1822,7 +1823,7 @@ export const generateOGImage = async (propertyId) => {
 
     }
 
-
+console.log('broswer is opening......10');
 
     const file = {
 
@@ -1831,7 +1832,7 @@ export const generateOGImage = async (propertyId) => {
     };
 
 
-
+console.log('broswer is opening......11');
     const result = await uploadToCloudinary(
 
       file,
