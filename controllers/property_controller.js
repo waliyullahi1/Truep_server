@@ -1652,29 +1652,100 @@ export const getSitemapProperties = async (req, res) => {
 
 
 
+import { exec } from "child_process";
+import { promisify } from "util";
+
+
+const execAsync = promisify(exec);
+
+
+
 export const generateOGImage = async (propertyId) => {
+
 
   let browser = null;
 
 
-  console.log("BROWSER START 1");
+
+  console.log("========== OG START ==========");
+
 
 
   try {
 
 
-    const property = await Propert.findById(propertyId);
+    const property =
+      await Propert.findById(propertyId);
 
 
 
-    console.log("BROWSER START 2");
+    console.log(
+      "PROPERTY FOUND:",
+      !!property
+    );
+
 
 
     if (!property) {
 
-      throw new Error("Invalid property id");
+      throw new Error(
+        "Invalid property id"
+      );
 
     }
+
+
+
+    // ==============================
+    // TEST CHROMIUM
+    // ==============================
+
+
+    console.log(
+      "Testing chromium..."
+    );
+
+
+
+    try {
+
+
+      const { stdout, stderr } =
+        await execAsync(
+          "/usr/bin/chromium --version"
+        );
+
+
+
+      console.log(
+        "CHROMIUM VERSION:",
+        stdout
+      );
+
+
+      if(stderr){
+
+        console.log(
+          "CHROMIUM STDERR:",
+          stderr
+        );
+
+      }
+
+
+
+    } catch(error){
+
+
+      console.log(
+        "CHROMIUM TEST FAILED:",
+        error.message
+      );
+
+
+    }
+
+
 
 
 
@@ -1686,56 +1757,114 @@ export const generateOGImage = async (propertyId) => {
 
 
     console.log(
-      "Chromium path:",
+      "EXECUTABLE PATH:",
       executablePath
     );
 
 
 
-    console.log("Launching chromium...");
+    console.log(
+      "Launching browser..."
+    );
 
 
 
-    browser = await puppeteer.launch({
 
-      headless: true,
+    browser =
+      await puppeteer.launch({
 
-      executablePath,
-
-      timeout: 60000,
+        headless:"new",
 
 
-      args: [
-
-        "--no-sandbox",
-
-        "--disable-setuid-sandbox",
-
-        "--disable-dev-shm-usage",
-
-        "--disable-gpu",
-
-        "--no-zygote",
-
-        "--single-process",
-
-        "--disable-software-rasterizer"
-
-      ]
-
-    });
+        executablePath,
 
 
-
-    console.log("BROWSER START 3 - Chromium launched");
-
+        timeout:120000,
 
 
-    const page = await browser.newPage();
+        dumpio:true,
+
+
+        args:[
+
+
+          "--no-sandbox",
+
+
+          "--disable-setuid-sandbox",
+
+
+          "--disable-dev-shm-usage",
+
+
+          "--disable-gpu",
+
+
+          "--disable-software-rasterizer",
+
+
+          "--disable-extensions",
+
+
+          "--no-first-run",
+
+
+          "--no-default-browser-check"
 
 
 
-    console.log("BROWSER START 4 - Page created");
+        ]
+
+      });
+
+
+
+
+    console.log(
+      "BROWSER LAUNCHED SUCCESSFULLY"
+    );
+
+
+
+
+    const page =
+      await browser.newPage();
+
+
+
+
+    console.log(
+      "PAGE CREATED"
+    );
+
+
+
+
+    page.on(
+      "console",
+      msg => {
+
+        console.log(
+          "FRONTEND:",
+          msg.text()
+        );
+
+      }
+    );
+
+
+
+    page.on(
+      "pageerror",
+      error => {
+
+        console.log(
+          "PAGE ERROR:",
+          error.message
+        );
+
+      }
+    );
 
 
 
@@ -1751,26 +1880,10 @@ export const generateOGImage = async (propertyId) => {
 
 
 
-    console.log("BROWSER START 5 - Viewport set");
-
-
-
-    page.on(
-      "console",
-      msg => console.log(
-        "PAGE LOG:",
-        msg.text()
-      )
+    console.log(
+      "VIEWPORT READY"
     );
 
-
-    page.on(
-      "pageerror",
-      error => console.log(
-        "PAGE ERROR:",
-        error.message
-      )
-    );
 
 
 
@@ -1780,25 +1893,27 @@ export const generateOGImage = async (propertyId) => {
 
 
     console.log(
-      "Opening:",
+      "OPENING URL:",
       url
     );
 
 
 
-    const response = await page.goto(
 
-      url,
+    const response =
+      await page.goto(
 
-      {
+        url,
 
-        waitUntil:"networkidle0",
+        {
 
-        timeout:60000
+          waitUntil:"networkidle0",
 
-      }
+          timeout:60000
 
-    );
+        }
+
+      );
 
 
 
@@ -1810,14 +1925,32 @@ export const generateOGImage = async (propertyId) => {
 
 
     console.log(
-      "CURRENT URL:",
+      "CURRENT PAGE:",
       page.url()
     );
 
 
 
+
+    await page.screenshot({
+
+      path:"debug-before-card.png",
+
+      fullPage:true
+
+    });
+
+
+
     console.log(
-      "Waiting for OG card..."
+      "DEBUG SCREENSHOT CREATED"
+    );
+
+
+
+
+    console.log(
+      "WAITING FOR OG CARD"
     );
 
 
@@ -1838,9 +1971,12 @@ export const generateOGImage = async (propertyId) => {
 
 
 
+
     console.log(
       "OG CARD FOUND"
     );
+
+
 
 
 
@@ -1883,18 +2019,24 @@ export const generateOGImage = async (propertyId) => {
           });
 
 
+
         })
 
+
       );
+
 
 
     });
 
 
 
+
+
     console.log(
-      "Images loaded"
+      "IMAGES READY"
     );
+
 
 
 
@@ -1919,19 +2061,20 @@ export const generateOGImage = async (propertyId) => {
 
 
 
+
+
     console.log(
-      "Screenshot created"
+      "SCREENSHOT DONE"
     );
 
 
 
-    if(
-      property.ogimage?.image?.public_id
-    ){
+
+    if(property.ogimage?.image?.public_id){
 
 
       console.log(
-        "Deleting old image"
+        "DELETING OLD IMAGE"
       );
 
 
@@ -1946,16 +2089,9 @@ export const generateOGImage = async (propertyId) => {
 
 
 
-    const file = {
-
-      buffer:imageBuffer
-
-    };
-
-
 
     console.log(
-      "Uploading image"
+      "UPLOADING CLOUDINARY"
     );
 
 
@@ -1963,7 +2099,11 @@ export const generateOGImage = async (propertyId) => {
     const result =
       await uploadToCloudinary(
 
-        file,
+        {
+
+          buffer:imageBuffer
+
+        },
 
         "og_images"
 
@@ -1971,10 +2111,13 @@ export const generateOGImage = async (propertyId) => {
 
 
 
+
     console.log(
-      "Cloudinary upload done",
+      "UPLOAD SUCCESS:",
       result.secure_url
     );
+
+
 
 
 
@@ -2000,12 +2143,19 @@ export const generateOGImage = async (propertyId) => {
 
 
 
+
     await property.save();
 
 
 
     console.log(
-      "Database saved"
+      "DATABASE UPDATED"
+    );
+
+
+
+    console.log(
+      "========== OG FINISHED =========="
     );
 
 
@@ -2023,11 +2173,17 @@ export const generateOGImage = async (propertyId) => {
 
 
 
+
+
   } catch(error){
 
 
+    console.log(
+      "========== OG FAILED =========="
+    );
+
+
     console.error(
-      "OG IMAGE ERROR:",
       error
     );
 
@@ -2044,7 +2200,7 @@ export const generateOGImage = async (propertyId) => {
 
 
       console.log(
-        "Closing browser"
+        "CLOSING BROWSER"
       );
 
 
