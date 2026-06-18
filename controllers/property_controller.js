@@ -1888,7 +1888,7 @@ export const generateOGImage = async (propertyId) => {
 
 
     const url =
-      `${process.env.FRONTEND_BASE_URL}/ogImage/${propertyId}`;
+      `${process.env.FRONTEND_BASE_URL}ogImage/${propertyId}`;
 
 
 
