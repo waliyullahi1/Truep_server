@@ -10,7 +10,7 @@ router.get("/", protect, getPropertyByUser);
 router.get("/all",   getAllProperty);
 router.get("/sitemap",   getSitemapProperties);
 router.post('/upload-og',  protect, uploadAvatar.single("file"), updateogImage)
-router.post("/:id", protect, updateproperty);
+router.post("/:id", protect,  updateproperty);
 router.patch('/:id/status', protect, updatePropertyStatus)
 
 
