@@ -4,7 +4,7 @@ import Propert from "../model/Property.js";
 import { uploadToCloudinary, deleteFromCloudinary } from "../utils/upload.js";
 import jwt from 'jsonwebtoken'; 
 import mongoose from 'mongoose'
-import slugify from "slugify"
+
 import puppeteer from "puppeteer"
 
 
