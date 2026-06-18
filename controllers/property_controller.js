@@ -1652,235 +1652,252 @@ export const getSitemapProperties = async (req, res) => {
 
 
 
-export const generateOGImage = async(propertyId)=>{
+export const generateOGImage = async (propertyId) => {
 
-let browser
+  let browser;
 
+  try {
 
-try{
+    const property = await Propert.findById(propertyId);
 
 
-const property =
-await Propert.findById(propertyId)
 
-console.log(property, 'property');
+    if (!property) {
 
-if(!property){
+      throw new Error("Invalid property id");
 
-throw new Error(
-"Invalid property id"
-)
+    }
 
-}
 
+    const executablePath =
+      process.env.NODE_ENV === "production"
+        ? "/usr/bin/chromium"
+        : undefined;
 
 
-browser = await puppeteer.launch({
-  headless: true,
-  args:[
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage"
-  ]
-})
 
+    browser = await puppeteer.launch({
 
-const page =
-await browser.newPage()
+      headless: true,
 
+      executablePath,
 
+      args: [
 
-await page.setViewport({
+        "--no-sandbox",
 
-width:1200,
+        "--disable-setuid-sandbox",
 
-height:630,
+        "--disable-dev-shm-usage",
 
-deviceScaleFactor:1
+        "--disable-gpu"
 
-})
+      ]
 
+    });
 
 
-await page.goto(
 
-`${process.env.FRONTEND_BASE_URL}/ogImage/${propertyId}`,
+    const page = await browser.newPage();
 
-{
 
-waitUntil:"networkidle0",
 
-timeout:60000
+    await page.setViewport({
 
-}
+      width: 1200,
 
-)
+      height: 630,
 
+      deviceScaleFactor: 1
 
+    });
 
-await page.waitForSelector(
-".og-card",
-{
-timeout:30000
-}
-)
 
+    await page.goto(
 
+      `${process.env.FRONTEND_BASE_URL}ogImage/${propertyId}`,
 
-// wait fonts and images
+      {
 
-await page.evaluate(async()=>{
+        waitUntil: "networkidle0",
 
+        timeout: 60000
 
-await document.fonts.ready
+      }
 
+    );
 
 
-const images =
-Array.from(
-document.images
-)
 
+    await page.waitForSelector(
 
-await Promise.all(
+      ".og-card",
 
-images.map(img=>{
+      {
 
+        timeout:30000
 
-if(img.complete)
-return Promise.resolve()
+      }
 
+    );
 
-return new Promise(resolve=>{
 
-img.onload=resolve
 
-img.onerror=resolve
+    // wait fonts and images
 
-})
+    await page.evaluate(async()=>{
 
 
-})
+      await document.fonts.ready;
 
-)
 
 
-})
+      const images = Array.from(
+        document.images
+      );
 
 
 
+      await Promise.all(
 
-// screenshot
+        images.map(img=>{
 
-const imageBuffer =
-await page.screenshot({
 
-type:"png",
+          if(img.complete){
 
-clip:{
+            return Promise.resolve();
 
-x:0,
+          }
 
-y:0,
 
-width:1200,
+          return new Promise(resolve=>{
 
-height:630
+            img.onload = resolve;
 
-}
+            img.onerror = resolve;
 
-})
+          });
 
 
+        })
 
+      );
 
-// delete old image
 
-if(
-property.ogimage?.image?.public_id
-){
+    });
 
-await deleteFromCloudinary(
-property.ogimage.image.public_id
-)
 
-}
 
+    const imageBuffer = await page.screenshot({
 
+      type:"png",
 
-// IMPORTANT PART
-// convert Buffer to file object
+      clip:{
 
-const file = {
+        x:0,
 
-buffer:imageBuffer
+        y:0,
 
-}
+        width:1200,
 
+        height:630
 
+      }
 
-// upload
+    });
 
-const result =
-await uploadToCloudinary(
-file,
-"og_images"
-)
 
 
+    // remove old cloudinary image
 
+    if(property.ogimage?.image?.public_id){
 
-// save database
 
-property.ogimage = {
+      await deleteFromCloudinary(
 
-image:{
+        property.ogimage.image.public_id
 
-url:result.secure_url,
+      );
 
-public_id:result.public_id,
 
-type:"ogimage"
+    }
 
-}
 
-}
 
+    const file = {
 
+      buffer:imageBuffer
 
-await property.save()
+    };
 
 
 
-await browser.close()
+    const result = await uploadToCloudinary(
 
+      file,
 
+      "og_images"
 
-return {
+    );
 
-url:result.secure_url,
 
-public_id:result.public_id
 
-}
+    property.ogimage = {
 
+      image:{
 
+        url:result.secure_url,
 
-}catch(error){
+        public_id:result.public_id,
 
+        type:"ogimage"
 
-if(browser)
-await browser.close()
+      }
 
+    };
 
-throw error
 
 
-}
+    await property.save();
 
 
-}
 
+    return {
+
+      url:result.secure_url,
+
+      public_id:result.public_id
+
+    };
+
+
+
+  } catch(error) {
+
+
+    console.error(
+      "OG IMAGE ERROR:",
+      error
+    );
+
+
+    throw error;
+
+
+  } finally {
+
+
+    if(browser){
+
+      await browser.close();
+
+    }
+
+
+  }
+
+
+};
 export const updateogImage = async (req, res) => {
   try {
     
