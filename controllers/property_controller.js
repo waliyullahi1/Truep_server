@@ -1654,20 +1654,28 @@ export const getSitemapProperties = async (req, res) => {
 
 export const generateOGImage = async (propertyId) => {
 
-  let browser;
-  console.log('broswer is opening......');
-  
+  let browser = null;
+
+
+  console.log("BROWSER START 1");
+
+
   try {
+
 
     const property = await Propert.findById(propertyId);
 
 
- console.log('broswer is opening......2');
+
+    console.log("BROWSER START 2");
+
+
     if (!property) {
 
       throw new Error("Invalid property id");
 
     }
+
 
 
     const executablePath =
@@ -1676,12 +1684,26 @@ export const generateOGImage = async (propertyId) => {
         : undefined;
 
 
-console.log('broswer is opening......3', executablePath);
+
+    console.log(
+      "Chromium path:",
+      executablePath
+    );
+
+
+
+    console.log("Launching chromium...");
+
+
+
     browser = await puppeteer.launch({
 
       headless: true,
 
       executablePath,
+
+      timeout: 60000,
+
 
       args: [
 
@@ -1691,60 +1713,136 @@ console.log('broswer is opening......3', executablePath);
 
         "--disable-dev-shm-usage",
 
-        "--disable-gpu"
+        "--disable-gpu",
+
+        "--no-zygote",
+
+        "--single-process",
+
+        "--disable-software-rasterizer"
 
       ]
 
     });
 
-console.log('broswer is opening......4');
+
+
+    console.log("BROWSER START 3 - Chromium launched");
+
+
 
     const page = await browser.newPage();
 
-console.log('broswer is opening......5');
+
+
+    console.log("BROWSER START 4 - Page created");
+
+
 
     await page.setViewport({
 
-      width: 1200,
+      width:1200,
 
-      height: 630,
+      height:630,
 
-      deviceScaleFactor: 1
+      deviceScaleFactor:1
 
     });
-console.log('broswer is opening......6');
 
-    await page.goto(
 
-      `${process.env.FRONTEND_BASE_URL}ogImage/${propertyId}`,
+
+    console.log("BROWSER START 5 - Viewport set");
+
+
+
+    page.on(
+      "console",
+      msg => console.log(
+        "PAGE LOG:",
+        msg.text()
+      )
+    );
+
+
+    page.on(
+      "pageerror",
+      error => console.log(
+        "PAGE ERROR:",
+        error.message
+      )
+    );
+
+
+
+    const url =
+      `${process.env.FRONTEND_BASE_URL}/ogImage/${propertyId}`;
+
+
+
+    console.log(
+      "Opening:",
+      url
+    );
+
+
+
+    const response = await page.goto(
+
+      url,
 
       {
 
-        waitUntil: "networkidle0",
+        waitUntil:"networkidle0",
 
-        timeout: 60000
+        timeout:60000
 
       }
 
     );
 
 
-console.log('broswer is opening......7');
+
+    console.log(
+      "PAGE STATUS:",
+      response.status()
+    );
+
+
+
+    console.log(
+      "CURRENT URL:",
+      page.url()
+    );
+
+
+
+    console.log(
+      "Waiting for OG card..."
+    );
+
+
+
     await page.waitForSelector(
 
       ".og-card",
 
       {
 
-        timeout:30000
+        visible:true,
+
+        timeout:60000
 
       }
 
     );
 
-console.log('broswer is opening......8');
 
-    // wait fonts and images
+
+    console.log(
+      "OG CARD FOUND"
+    );
+
+
 
     await page.evaluate(async()=>{
 
@@ -1753,9 +1851,10 @@ console.log('broswer is opening......8');
 
 
 
-      const images = Array.from(
-        document.images
-      );
+      const images =
+        Array.from(
+          document.images
+        );
 
 
 
@@ -1771,11 +1870,15 @@ console.log('broswer is opening......8');
           }
 
 
+
           return new Promise(resolve=>{
+
 
             img.onload = resolve;
 
+
             img.onerror = resolve;
+
 
           });
 
@@ -1788,30 +1891,48 @@ console.log('broswer is opening......8');
     });
 
 
-console.log('broswer is opening......9');
-    const imageBuffer = await page.screenshot({
 
-      type:"png",
-
-      clip:{
-
-        x:0,
-
-        y:0,
-
-        width:1200,
-
-        height:630
-
-      }
-
-    });
+    console.log(
+      "Images loaded"
+    );
 
 
 
-    // remove old cloudinary image
+    const imageBuffer =
+      await page.screenshot({
 
-    if(property.ogimage?.image?.public_id){
+        type:"png",
+
+        clip:{
+
+          x:0,
+
+          y:0,
+
+          width:1200,
+
+          height:630
+
+        }
+
+      });
+
+
+
+    console.log(
+      "Screenshot created"
+    );
+
+
+
+    if(
+      property.ogimage?.image?.public_id
+    ){
+
+
+      console.log(
+        "Deleting old image"
+      );
 
 
       await deleteFromCloudinary(
@@ -1823,7 +1944,7 @@ console.log('broswer is opening......9');
 
     }
 
-console.log('broswer is opening......10');
+
 
     const file = {
 
@@ -1832,28 +1953,48 @@ console.log('broswer is opening......10');
     };
 
 
-console.log('broswer is opening......11');
-    const result = await uploadToCloudinary(
 
-      file,
+    console.log(
+      "Uploading image"
+    );
 
-      "og_images"
 
+
+    const result =
+      await uploadToCloudinary(
+
+        file,
+
+        "og_images"
+
+      );
+
+
+
+    console.log(
+      "Cloudinary upload done",
+      result.secure_url
     );
 
 
 
     property.ogimage = {
 
+
       image:{
+
 
         url:result.secure_url,
 
+
         public_id:result.public_id,
+
 
         type:"ogimage"
 
+
       }
+
 
     };
 
@@ -1863,17 +2004,26 @@ console.log('broswer is opening......11');
 
 
 
+    console.log(
+      "Database saved"
+    );
+
+
+
     return {
+
 
       url:result.secure_url,
 
+
       public_id:result.public_id
+
 
     };
 
 
 
-  } catch(error) {
+  } catch(error){
 
 
     console.error(
@@ -1885,12 +2035,21 @@ console.log('broswer is opening......11');
     throw error;
 
 
+
   } finally {
+
 
 
     if(browser){
 
+
+      console.log(
+        "Closing browser"
+      );
+
+
       await browser.close();
+
 
     }
 
