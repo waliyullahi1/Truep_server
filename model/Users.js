@@ -24,6 +24,15 @@ const Userscheme = new Schema({
     type: String,
     default: null
   },
+  ogImage: {
+    type: String,
+    default: null
+  },
+  ogImage_public_id: {
+    type: String,
+    default: null
+  },
+
   lastName: {
     type: String,
     required: true,

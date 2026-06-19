@@ -4,6 +4,8 @@ import  Others from "../model/Others.js";
 import axios from "axios";
 import mongoose from 'mongoose';
 import Propert from "../model/Property.js";
+import puppeteer from "puppeteer"
+
 export const updateAvater = async (req, res) => {
   try {
 
@@ -780,3 +782,564 @@ export const getAgent = async (req, res) => {
     })
   }
 }
+
+
+import { exec } from "child_process";
+import { promisify } from "util";
+
+
+const execAsync = promisify(exec);
+
+
+
+export const generateOGImage = async (userId)=>{
+
+
+let browser=null;
+
+
+try{
+
+
+console.log("========== OG START ==========");
+
+
+
+const user =
+await Usertp.findById(userId);
+
+
+
+if(!user){
+
+throw new Error(
+"User not found"
+);
+
+}
+
+
+
+
+browser =
+await puppeteer.launch({
+
+headless:"new",
+
+executablePath:
+process.env.NODE_ENV === "production"
+? "/usr/bin/chromium"
+: undefined,
+
+
+timeout:120000,
+
+
+args:[
+
+"--no-sandbox",
+
+"--disable-setuid-sandbox",
+
+"--disable-dev-shm-usage",
+
+"--disable-gpu"
+
+]
+
+
+});
+
+
+
+
+
+const page =
+await browser.newPage();
+
+
+
+
+await page.setViewport({
+
+width:1200,
+
+height:630,
+
+deviceScaleFactor:1
+
+});
+
+
+
+
+
+page.on(
+"console",
+msg=>{
+
+console.log(
+"FRONTEND:",
+msg.text()
+)
+
+}
+
+);
+
+
+
+
+
+const url =
+`${process.env.FRONTEND_BASE_URL}ogProfile/${userId}`;
+
+
+
+console.log(
+"OPEN:",
+url
+);
+
+
+
+
+
+await page.goto(
+
+url,
+
+{
+
+waitUntil:"networkidle0",
+
+timeout:60000
+
+}
+
+);
+
+
+
+
+
+await page.waitForSelector(
+
+".og-card",
+
+{
+
+visible:true,
+
+timeout:60000
+
+}
+
+);
+
+
+
+
+
+
+
+await page.evaluate(async()=>{
+
+
+await document.fonts.ready;
+
+
+const images =
+Array.from(document.images);
+
+
+
+await Promise.all(
+
+images.map(img=>{
+
+
+if(img.complete){
+
+return Promise.resolve();
+
+}
+
+
+
+return new Promise(resolve=>{
+
+
+img.onload=resolve;
+
+img.onerror=resolve;
+
+
+})
+
+
+})
+
+
+);
+
+
+
+});
+
+
+
+
+
+
+
+const imageBuffer =
+await page.screenshot({
+
+type:"png",
+
+clip:{
+
+x:0,
+
+y:0,
+
+width:800,
+
+height:1200
+
+}
+
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// DELETE OLD IMAGE
+
+if(user.ogImage_public_id){
+
+
+await deleteFromCloudinary(
+
+user.ogImage_public_id
+
+);
+
+
+}
+
+
+
+
+
+
+
+// CLOUDINARY UPLOAD
+
+const result =
+await uploadToCloudinary(
+
+{
+
+buffer:imageBuffer
+
+},
+
+"og_images"
+
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+user.ogImage =
+result.secure_url;
+
+
+user.ogImage_public_id =
+result.public_id;
+
+
+
+await user.save();
+
+
+
+
+
+return {
+
+
+url:result.secure_url,
+
+public_id:result.public_id
+
+
+};
+
+
+
+
+
+}catch(error){
+
+
+
+
+
+throw error;
+
+
+
+}finally{
+
+
+
+if(browser){
+
+await browser.close();
+
+}
+
+
+
+}
+
+
+
+};
+
+export const updateogImage = async(req,res)=>{
+
+
+try{
+
+
+const  userId =req.user._id;
+
+
+
+
+const user =
+await Usertp.findById(userId);
+
+
+
+if(!user){
+
+
+return res.status(404).json({
+
+success:false,
+
+message:"User not found"
+
+});
+
+
+}
+
+
+
+
+const startTime = Date.now();
+
+const result =
+await generateOGImage(userId);
+
+
+
+
+
+
+
+return res.status(200).json({
+
+success:true,
+
+message:"OG image updated successfully",
+
+ogImage:result.url,
+
+public_id:result.public_id
+
+
+});
+
+
+
+
+
+}catch(error){
+
+
+
+
+
+
+return res.status(500).json({
+
+success:false,
+
+message:"Server error",
+
+error:error.message
+
+});
+
+
+}
+
+
+
+};
+
+export const getUserByIdForOgImg = async (req, res) => {
+
+ try {
+    const  id  =  req.params.id
+
+    /* =====================================================
+       VALIDATE ID
+    ===================================================== */
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      })
+    }
+
+    /* =====================================================
+       AGGREGATION
+    ===================================================== */
+
+    const agent = await Usertp.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(id),
+        },
+      },
+
+      /* =====================================================
+         JOIN OTHERS
+      ===================================================== */
+
+      {
+        $lookup: {
+          from: "others",
+          localField: "_id",
+          foreignField: "userId",
+          as: "other",
+        },
+      },
+
+      {
+        $unwind: {
+          path: "$other",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
+      /* =====================================================
+         JOIN PROPERTIES
+      ===================================================== */
+
+      {
+        $lookup: {
+          from: "propert", // check collection name
+          localField: "_id",
+          foreignField: "userId",
+          as: "properties",
+        },
+      },
+
+      /* =====================================================
+         MERGE USER + OTHER
+      ===================================================== */
+
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              "$$ROOT",
+              "$other",
+            ],
+          },
+        },
+      },
+
+      /* =====================================================
+         REMOVE UNWANTED FIELDS
+      ===================================================== */
+
+      {
+        $project: {
+         firstName: 1,
+
+        lastName: 1,
+          whatsapp_no:1,
+        roles: 1,
+          location:1,
+        phone: 1,
+
+        skills: 1,
+
+        media: 1,
+
+        avatar: 1
+        },
+      },
+    ])
+
+    /* =====================================================
+       NOT FOUND
+    ===================================================== */
+
+    if (!agent.length) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      })
+    }
+
+    /* =====================================================
+       RESPONSE
+    ===================================================== */
+    
+    
+    res.status(200).json({
+      success: true,
+      data: agent[0],
+    })
+
+  } catch (error) {
+    // console.log(error)
+
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    })
+  }
+};
