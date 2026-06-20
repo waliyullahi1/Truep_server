@@ -7,7 +7,7 @@ import { bravo_sendEmail } from "../service/bravoemail.js";
 export const bookInspection = async (req, res) => {
   try {
     const { propertyId } = req.params;
-console.log("REQ USER:", req.user);
+
     const {
       inspectionDate,
       inspectionTime,
@@ -42,8 +42,12 @@ console.log("REQ USER:", req.user);
     ========================== */
 
     if (req.user) {
-      console.log(req.user, 'user as login');
-
+      if (property.userId.equals(req.user._id)) {
+        return res.status(400).json({
+          success: false,
+          message: "You cannot book an inspection for your own property"
+        });
+      }
       const existingInspection =
         await Inspection.findOne({
           property: propertyId,
@@ -59,8 +63,8 @@ console.log("REQ USER:", req.user);
           message: "Inspection already booked"
         });
       }
-      console.log(property);
 
+      
       const inspection =
         await Inspection.create({
           property: property._id,
@@ -74,7 +78,7 @@ console.log("REQ USER:", req.user);
        
         
         const seller = await Usertp.findById(property.userId)
-        console.log(seller);
+     
         
       const emailRes = await bravo_sendEmail({
         to: seller.email,
@@ -96,7 +100,7 @@ console.log("REQ USER:", req.user);
 
         )
       })
-      console.log(emailRes);
+    
       
       return res.status(201).json({
         success: true,
@@ -132,12 +136,12 @@ console.log("REQ USER:", req.user);
 
     const existingUser =
       await Usertp.findOne({ email });
-    console.log(existingUser);
+    
     
     if (existingUser) {
-      console.log(' user are already exist');
+
       if (existingUser.emailVerified) {
-        console.log(' login no fund');
+
         return res.status(400).json({
           success: false,
           message:
@@ -147,9 +151,9 @@ console.log("REQ USER:", req.user);
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       existingUser.emailVerificationToken = otp;
       await existingUser.save();
-      console.log(existingUser.emailVerificationToken, 'send message to email');
+    
 
-      console.log('send message to email');
+     
 
       const emailRes = await bravo_sendEmail({
         to: existingUser.email,
@@ -169,7 +173,7 @@ console.log("REQ USER:", req.user);
 
 
     } else {
- console.log(' new user');
+
 
       const newuser = await Usertp.create({
         firstName,
@@ -184,7 +188,7 @@ console.log("REQ USER:", req.user);
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     newuser.emailVerificationToken = otp;
     await newuser.save();
-    console.log(newuser, 'send message to email');
+    
     const emailRes = await bravo_sendEmail({
       to: newuser.email,
       subject: "Abanise Email Verification Code",
@@ -195,7 +199,7 @@ console.log("REQ USER:", req.user);
       })
     })
 
-    console.log(newuser);
+ 
     
 
       return res.status(403).json({
@@ -231,7 +235,7 @@ export const bookInspections = async (req, res) => {
         $lte: endOfDay
       }
     });
-    console.log(users, 'dfdfgf forv today');
+   
     
     const userIds = users.map(user => user._id);
 
@@ -264,14 +268,14 @@ export const getSellerInspections = async (req, res) => {
     })
       .populate({
         path: "property",
-        select: "title price images location status"
+        select: "title price avatar location status"
       })
       .populate({
         path: "buyer",
-        select: "firstName lastName email phone"
+        select: "firstName avatar lastName  phone"
       })
       .sort({ createdAt: -1 });
-      console.log(inspections);
+      
       
     return res.status(200).json({
       success: true,
@@ -289,6 +293,35 @@ export const getSellerInspections = async (req, res) => {
   }
 };
 
+export const getOutgoingInspections = async (req, res) => {
+  try {
+  const inspections = await Inspection.find({
+    buyer: req.user._id
+  })
+  .populate(
+    'seller',
+    'firstName lastName phone avatar'
+  )
+  .populate(
+    'property',
+    'title location status'
+  )
+  .sort({ createdAt: -1 });
+     
+
+      
+    res.json({
+      success: true,
+      data: inspections
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 export const checkPropertyBook = async (req, res) => {
   try {
     const { propertyId } = req.params;
@@ -298,7 +331,7 @@ export const checkPropertyBook = async (req, res) => {
         success: false, message: " Property Not FUnd"
       });
     }
-    console.log(req.user);
+   
 
     const existingInspection = await Inspection.findOne({
       property: propertyId,
@@ -330,3 +363,85 @@ export const checkPropertyBook = async (req, res) => {
     });
   }
 }
+
+
+export const updateInspectionStatus = async (
+  req,
+  res
+) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const allowedStatuses = [
+      "approved",
+      "rejected",
+      "completed",
+      "cancelled"
+    ];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status"
+      });
+    }
+
+    const inspection = await Inspection.findById(id)
+      .populate("property");
+
+    if (!inspection) {
+      return res.status(404).json({
+        success: false,
+        message: "Inspection not found"
+      });
+    }
+
+    const isSeller =
+      inspection.property.userId.toString() ===
+      req.user._id.toString();
+
+    const isBuyer =
+      inspection.buyer.toString() ===
+      req.user._id.toString();
+
+    if (
+      ["approved", "rejected", "completed"].includes(status) &&
+      !isSeller
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Only seller can perform this action"
+      });
+    }
+
+    if (
+      status === "cancelled" &&
+      !isBuyer &&
+      !isSeller
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized"
+      });
+    }
+
+    inspection.status = status;
+
+    await inspection.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Inspection ${status} successfully`,
+      inspection
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+};
