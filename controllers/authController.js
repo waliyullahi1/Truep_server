@@ -35,7 +35,7 @@ export const handleNewUsers = async (req, res) => {
        
       const emailRes = await bravo_sendEmail({
         to: existingUser.email,
-        subject: "Your TruePeople Verification Code",
+        subject: "Your Abanise Verification Code",
         html: renderOtpTemplateHtml({
           name: `${existingUser.firstName} ${existingUser.lastName}`,
           otp,
@@ -134,7 +134,7 @@ export const verifyEmail = async (req, res) => {
     // If already verified, just send the refresh token
     if (user.emailVerified) {
       const refreshToken = jwt.sign(
-        { email: user.email },
+        { id: user._id },
         process.env.REFRESH_TOKEN_SECRETY,
         { expiresIn: "1d" }
       );
@@ -170,7 +170,7 @@ export const verifyEmail = async (req, res) => {
 
     // Generate refresh token
     const refreshToken = jwt.sign(
-      { email: user.email },
+      { id: user._id  },
       process.env.REFRESH_TOKEN_SECRETY,
       { expiresIn: "1d" }
     );

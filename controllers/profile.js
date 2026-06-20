@@ -730,7 +730,7 @@ export const getAgent = async (req, res) => {
           emailVerified: 0,
           resetPasswordExpires: 0,
           resetPasswordToken: 0,
-
+          "email": 0,
           "other._id": 0,
           "other.userId": 0,
           "other.createdAt": 0,
@@ -1159,7 +1159,16 @@ message:"User not found"
 
 
 }
+if(!user.avatar){
+  return res.status(404).json({
 
+success:false,
+
+message:"User not found"
+
+});
+
+}
 
 
 

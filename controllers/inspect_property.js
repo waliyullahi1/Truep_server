@@ -1,13 +1,13 @@
 import Inspection from "../model/Inspection.js";
 import Property from "../model/Property.js";
 import Usertp from "../model/Users.js";
-import {renderOtpTemplateHtmlBeforeInspection} from "../template/verifyEmail.js";
-import {inspectionRequestTemplate} from "../template/inspection_template.js";
+import { renderOtpTemplateHtmlBeforeInspection } from "../template/verifyEmail.js";
+import { inspectionRequestTemplate } from "../template/inspection_template.js";
 import { bravo_sendEmail } from "../service/bravoemail.js";
 export const bookInspection = async (req, res) => {
   try {
     const { propertyId } = req.params;
-
+console.log("REQ USER:", req.user);
     const {
       inspectionDate,
       inspectionTime,
@@ -42,8 +42,8 @@ export const bookInspection = async (req, res) => {
     ========================== */
 
     if (req.user) {
-      console.log(req.user);
-      
+      console.log(req.user, 'user as login');
+
       const existingInspection =
         await Inspection.findOne({
           property: propertyId,
@@ -60,7 +60,7 @@ export const bookInspection = async (req, res) => {
         });
       }
       console.log(property);
-      
+
       const inspection =
         await Inspection.create({
           property: property._id,
@@ -71,7 +71,33 @@ export const bookInspection = async (req, res) => {
           inspectionTime,
           message
         });
+       
+        
+        const seller = await Usertp.findById(property.userId)
+        console.log(seller);
+        
+      const emailRes = await bravo_sendEmail({
+        to: seller.email,
+        subject: "Inspection Notices",
+        html: inspectionRequestTemplate(
+          `${seller.firstName} ${seller.lastName}`,
+          `${req.user.firstName} ${req.user.lastName}`,
+          req.user.email,
+          phone,
+          property.title,
+          `${property.location.state}, ${property.location.city} ${property.location.address}`,
+          inspectionDate,
+          inspectionTime,
+          message,
+          `${process.env.FRONTEND_BASE_URL}property/${property.slogan}`
 
+
+
+
+        )
+      })
+      console.log(emailRes);
+      
       return res.status(201).json({
         success: true,
         message: "Inspection booked successfully",
@@ -106,57 +132,25 @@ export const bookInspection = async (req, res) => {
 
     const existingUser =
       await Usertp.findOne({ email });
-
+    console.log(existingUser);
+    
     if (existingUser) {
- console.log( ' user  fund');
+      console.log(' user are already exist');
       if (existingUser.emailVerified) {
-         console.log( ' login no fund');
+        console.log(' login no fund');
         return res.status(400).json({
           success: false,
           message:
             "Email already associated with an account. Please login to book inspection."
         });
       }
-     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-
-      const existingInspection =  await Inspection.findOne({
-        property: propertyId,
-        buyer: existingUser._id,
-        status: {
-          $in: ["pending"]
-        }
-      });
-
-      if ( existingInspection) {
-       existingInspection.propertyId = property._id;
-        existingInspection.seller = property.userId;
-         existingInspection.phone =  phone;
-         await existingInspection.save();
-        console.log( 'property is already booked,   edit it to current property ');
-
-      }
-      if (!existingInspection) {
-         await Inspection.create({
-        property: property._id,
-        seller: property.userId,
-        buyer: existingUser._id,
-        phone,
-        inspectionDate,
-        inspectionTime,
-        message
-      });
-
-      console.log( 'user as no verify and we create new inpection for her for her');
-      
-      }
-       console.log( 'send message to email');
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
       existingUser.emailVerificationToken = otp;
       await existingUser.save();
-      console.log( existingUser.emailVerificationToken, 'send message to email');
-      
-      console.log( 'send message to email');
-      
+      console.log(existingUser.emailVerificationToken, 'send message to email');
+
+      console.log('send message to email');
+
       const emailRes = await bravo_sendEmail({
         to: existingUser.email,
         subject: "Abanise Email Verification Code",
@@ -172,50 +166,44 @@ export const bookInspection = async (req, res) => {
         message: "Verify Your Email to Complete Inspection Booking. Verification code sent to email."
       });
 
-   
+
 
     } else {
-     
-      
-     const  newuser = await Usertp.create({
+ console.log(' new user');
+
+      const newuser = await Usertp.create({
         firstName,
         lastName,
         email,
         phone
       });
 
-    }
-
-const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      newuser.emailVerificationToken = otp;
-      await newuser.save();
-      console.log( newuser.emailVerificationToken, 'send message to email');
-       const emailRes = await bravo_sendEmail({
-        to: newuser.email,
-        subject: "Abanise Email Verification Code",
-        html: renderOtpTemplateHtmlBeforeInspection({
-          name: `${newuser.firstName} ${newuser.lastName}`,
-          otp,
-          expiryMinutes: 15
-        })
-      })
    
+   
+    
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    newuser.emailVerificationToken = otp;
+    await newuser.save();
+    console.log(newuser, 'send message to email');
+    const emailRes = await bravo_sendEmail({
+      to: newuser.email,
+      subject: "Abanise Email Verification Code",
+      html: renderOtpTemplateHtmlBeforeInspection({
+        name: `${newuser.firstName} ${newuser.lastName}`,
+        otp,
+        expiryMinutes: 15
+      })
+    })
 
-    const inspection =
-      await Inspection.create({
-        property: property._id,
-        seller: property.userId,
-        buyer: user._id,
-        inspectionDate,
-        inspectionTime,
-        message
+    console.log(newuser);
+    
+
+      return res.status(403).json({
+        success: false,
+        message: "Verify Your Email to Complete Inspection Booking. Verification code sent to email."
       });
 
-    return res.status(201).json({
-      success: true,
-      message: "Verified  code as sent to your emaill befor Inspection booked successfully",
-      inspection
-    });
+ }
 
   } catch (error) {
 
@@ -229,7 +217,79 @@ const otp = Math.floor(100000 + Math.random() * 900000).toString();
   }
 };
 
-export const checkPropertyBook =  async (req, res) => {
+export const bookInspections = async (req, res) => {
+  try {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const users = await Usertp.find({
+      createdAt: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    });
+    console.log(users, 'dfdfgf forv today');
+    
+    const userIds = users.map(user => user._id);
+
+    const inspectionResult = await Inspection.deleteMany({});
+
+    const userResult = await Usertp.deleteMany({
+      _id: { $in: userIds }
+    });
+
+    return res.status(200).json({
+      success: true,
+      inspectionsDeleted: inspectionResult.deletedCount,
+      usersDeleted: userResult.deletedCount
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+export const getSellerInspections = async (req, res) => {
+  try {
+    const inspections = await Inspection.find({
+      seller: req.user._id
+    })
+      .populate({
+        path: "property",
+        select: "title price images location status"
+      })
+      .populate({
+        path: "buyer",
+        select: "firstName lastName email phone"
+      })
+      .sort({ createdAt: -1 });
+      console.log(inspections);
+      
+    return res.status(200).json({
+      success: true,
+      count: inspections.length,
+      inspections
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+export const checkPropertyBook = async (req, res) => {
   try {
     const { propertyId } = req.params;
     const property = await Property.findById(propertyId);
@@ -239,7 +299,7 @@ export const checkPropertyBook =  async (req, res) => {
       });
     }
     console.log(req.user);
-    
+
     const existingInspection = await Inspection.findOne({
       property: propertyId,
       buyer: req.user._id,
@@ -248,8 +308,8 @@ export const checkPropertyBook =  async (req, res) => {
       }
     });
     if (existingInspection) {
-    
-      
+
+
       return res.status(200).json({
         success: true,
         message: "Property is already booked.",

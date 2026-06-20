@@ -9,13 +9,13 @@ const inspectionSchema = new mongoose.Schema({
 
   buyer: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "Usertp",
     required: true
   },
 
   seller: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "Usertp",
     required: true
   },
 
@@ -45,6 +45,7 @@ const inspectionSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: [
+      "unverfy",
       "pending",
       "approved",
       "rejected",
