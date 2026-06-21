@@ -93,7 +93,7 @@ export const bookInspection = async (req, res) => {
           inspectionDate,
           inspectionTime,
           message,
-          `${process.env.FRONTEND_BASE_URL}property/${property.slogan}`
+          `${process.env.FRONTEND_BASE_URL}property/${property.slug}`
 
 
 
