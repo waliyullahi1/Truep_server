@@ -143,10 +143,10 @@ export const verifyEmail = async (req, res) => {
       await user.save();
 
       res.cookie('jwt', refreshToken, {
-        httpOnly: true,
-        secure: false,   // must be false on localhost
-        sameSite: 'Lax', // 'Lax' works on localhost
-        maxAge: 24 * 60 * 60 * 1000
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none',
+          maxAge: 24 * 60 * 60 * 1000,
       })
 
       return res.status(200).json({
@@ -180,10 +180,10 @@ export const verifyEmail = async (req, res) => {
 
     // Set cookie
     res.cookie('jwt', refreshToken, {
-      httpOnly: true,
-      secure: false,   // must be false on localhost
-      sameSite: 'Lax', // 'Lax' works on localhost
-      maxAge: 24 * 60 * 60 * 1000
+    httpOnly: true,
+     secure: true,
+     sameSite: 'none',
+     maxAge: 24 * 60 * 60 * 1000,
     })
 
     return res.status(200).json({
