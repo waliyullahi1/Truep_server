@@ -83,6 +83,7 @@ const Userscheme = new Schema({
       "Owner",
       "Admin",
       "Agent",
+      "Arc",
       "Architect",
       'Property Agent',
       "Senior Property Agent",
