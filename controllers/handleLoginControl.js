@@ -91,7 +91,7 @@ export const handleLogin = async (req, res) => {
       // Set HTTP-only cookie
         res.cookie('jwt', refreshToken, {
            httpOnly: true,
-           secure: false, // localhost
+           secure: true, // localhost
            sameSite: 'none', // important
           maxAge: 24 * 60 * 60 * 1000,
           });
@@ -141,7 +141,7 @@ export const googleCallback = async (req, res) => {
         // Save refresh token in cookie
         res.cookie('jwt', result.refreshToken, {
            httpOnly: true,
-           secure: false, // localhost
+           secure: true, // localhost
            sameSite: 'none', // important
           maxAge: 24 * 60 * 60 * 1000,
           });
