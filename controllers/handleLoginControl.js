@@ -90,10 +90,10 @@ export const handleLogin = async (req, res) => {
 
       // Set HTTP-only cookie
         res.cookie('jwt', refreshToken, {
-           httpOnly: true,
-           secure: false, // localhost
-           sameSite: 'lax', // important
-          maxAge: 24 * 60 * 60 * 1000,
+          httpOnly: true,
+           secure: true, // localhost
+           sameSite: 'none',
+           maxAge: 24 * 60 * 60 * 1000,
           });
 
       //  res.cookie('jwt', refreshToken, {
@@ -141,8 +141,8 @@ export const googleCallback = async (req, res) => {
         // Save refresh token in cookie
         res.cookie('jwt', result.refreshToken, {
            httpOnly: true,
-           secure: false, // localhost
-           sameSite: 'lax', // important
+           secure: true, // localhost
+           sameSite: 'none', // important
           maxAge: 24 * 60 * 60 * 1000,
           });
           // for Prodduct
