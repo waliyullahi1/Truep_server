@@ -48,7 +48,7 @@ const Userscheme = new Schema({
     unique: true,
     trim: true
   },
-    phone: {
+  phone: {
     type: String,
     trim: true
   },

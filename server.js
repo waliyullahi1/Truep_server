@@ -26,6 +26,7 @@ import profileRoutes from "./route/api/profile.js"
 import propertRoutes from "./route/api/property.js"
 import kycRoutes from "./route/api/kyc.js"
 import adminRoutes from "./route/api/admin.js"
+import paymentRoute from "./route/api/payment.js"
 import pingRoutes from "./route/ping.js"
 const app = express()
 
@@ -72,6 +73,7 @@ app.use("/kyc", kycRoutes)
 app.use("/admin", adminRoutes)
 app.use("/inspection", inspectRoute)
 app.use('/ping', pingRoutes);
+app.use('/payment', paymentRoute)
 
 // Test route
 app.get(

@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose'
 import slugify from "slugify"
 import puppeteer from "puppeteer"
+import PropertyOrder from "../model/PropertyOrder.js";
 
 
 /* =====================================================
@@ -294,11 +295,12 @@ export const getPropertyById = async (req, res) => {
     }
 
     
-
+ const order = await  PropertyOrder.findOne({property: property._id});
     // 3️⃣ Return property + ownership info
     return res.status(200).json({
       success: true,
       isOwner,
+      order,
       data: property,
     });
 
@@ -1882,9 +1884,6 @@ export const generateOGImage = async (propertyId) => {
 
 
 
-    console.log(
-      "VIEWPORT READY"
-    );
 
 
 
@@ -1894,11 +1893,7 @@ export const generateOGImage = async (propertyId) => {
 
 
 
-    console.log(
-      "OPENING URL:",
-      url
-    );
-
+  
 
 
 
@@ -1919,17 +1914,11 @@ export const generateOGImage = async (propertyId) => {
 
 
 
-    console.log(
-      "PAGE STATUS:",
-      response.status()
-    );
+  
 
 
 
-    console.log(
-      "CURRENT PAGE:",
-      page.url()
-    );
+  
 
 
 
@@ -2114,10 +2103,7 @@ export const generateOGImage = async (propertyId) => {
 
 
 
-    console.log(
-      "UPLOAD SUCCESS:",
-      result.secure_url
-    );
+   
 
 
 
