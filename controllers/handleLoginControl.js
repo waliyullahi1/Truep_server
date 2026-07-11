@@ -107,6 +107,7 @@ export const handleLogin = async (req, res) => {
       res.status(200).json({ data: foundUser  });
   } else if (authProvider === 'google') {
                 const redirect =  req.query.redirect || `${process.env.FRONTEND_BASE_URL}/search`;
+                console.log(redirect, 'redirect url trhehjlasajlc salsdahlsjk awdjhasldjkah sjdhlasjk ');
      const googleOAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
                 const params = new URLSearchParams({
                     client_id: process.env.GOOGLE_CLIENT_ID,
@@ -160,6 +161,8 @@ export const googleCallback = async (req, res) => {
         //     sameSite: 'none',
         //     maxAge: 24 * 60 * 60 * 1000,
         // });
+        console.log(state);
+        
         const redirectUrl = state || `${process.env.FRONTEND_BASE_URL}/search`
         // Redirect to frontend with access token
          return res.redirect(redirectUrl);
