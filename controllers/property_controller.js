@@ -245,27 +245,21 @@ export const updatePropertyStatus = async (req, res) => {
   }
 }
 
+
 export const getPropertyById = async (req, res) => {
   try {
     const id = req.params.id;
-      const isValidId = mongoose.Types.ObjectId.isValid(id)
-    let property
-    if (!isValidId) {
-      
-       if(!property){
-        // it is slogan pass here
-          property = await Propert.findOne({ slug: id }).populate("userId");
-        }
-       
-        
 
-    } else{
-       property = await Propert.findById(id).populate("userId");
+    let property = null;
+
+    // Find by ObjectId or slug
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      property = await Propert.findById(id).populate("userId");
+    } else {
+      property = await Propert.findOne({ slug: id }).populate("userId");
     }
 
-    // 1️⃣ Find property first
-    
-
+    // Property not found
     if (!property) {
       return res.status(404).json({
         success: false,
@@ -274,29 +268,47 @@ export const getPropertyById = async (req, res) => {
     }
 
     let isOwner = false;
+    let decoded = null;
+    let order = null;
 
-    // 2️⃣ Safely check JWT (optional, route is public)
+    // Optional authentication
     const token = req.cookies?.jwt;
 
     if (token) {
       try {
-       
-       
-        const decoded = jwt.verify(token,  process.env.REFRESH_TOKEN_SECRETY,);
-   // Convert to string to avoid ObjectId vs string issues
-        if (decoded.id.toString() === property.userId._id.toString()) {
+        decoded = jwt.verify(
+          token,
+          process.env.REFRESH_TOKEN_SECRETY
+        );
+
+        // Check ownership
+        if (
+          decoded.id.toString() === property.userId._id.toString()
+        ) {
           isOwner = true;
-         
         }
+
+        // Check if an order exists between the logged-in user
+        // and the property owner
+        order = await PropertyOrder.findOne({
+          property: property._id,
+          $or: [
+            {
+              seller: property.userId._id,
+              buyer: decoded.id,
+            },
+            {
+              seller: decoded.id,
+              buyer: property.userId._id,
+            },
+          ],
+        });
+
       } catch (err) {
-        // Invalid/expired token should NOT break this route
         console.log("JWT invalid or expired");
       }
     }
 
-    
- const order = await  PropertyOrder.findOne({property: property._id});
-    // 3️⃣ Return property + ownership info
     return res.status(200).json({
       success: true,
       isOwner,
@@ -306,6 +318,7 @@ export const getPropertyById = async (req, res) => {
 
   } catch (error) {
     console.error("PROPERTY ERROR:", error);
+
     return res.status(500).json({
       success: false,
       message: "Server error",
@@ -313,7 +326,6 @@ export const getPropertyById = async (req, res) => {
     });
   }
 };
-
 
 
 

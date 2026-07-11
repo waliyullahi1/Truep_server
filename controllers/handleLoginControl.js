@@ -106,6 +106,7 @@ export const handleLogin = async (req, res) => {
       // Send access token
       res.status(200).json({ data: foundUser  });
   } else if (authProvider === 'google') {
+                const redirect =  req.query.redirect || process.env.FRONTEND_BASE_URL/search;
      const googleOAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
                 const params = new URLSearchParams({
                     client_id: process.env.GOOGLE_CLIENT_ID,
@@ -113,7 +114,8 @@ export const handleLogin = async (req, res) => {
                     response_type: 'code',
                     scope: 'email profile',
                     access_type: 'offline',
-                    prompt: 'consent'
+                    prompt: 'consent',
+                     state: redirect
                 });
                
                 
@@ -132,7 +134,7 @@ export const handleLogin = async (req, res) => {
 
 export const googleCallback = async (req, res) => {
     try {
-        const { code } = req.query;
+        const { code, state } = req.query;
 
         const result = await AuthService.googleAuth(code);
          result.refreshToken
@@ -158,11 +160,9 @@ export const googleCallback = async (req, res) => {
         //     sameSite: 'none',
         //     maxAge: 24 * 60 * 60 * 1000,
         // });
-
+        const redirectUrl = state || `${process.env.FRONTEND_BASE_URL}/search`
         // Redirect to frontend with access token
-        return res.redirect(
-            `${process.env.FRONTEND_BASE_URL}search`
-        );
+         return res.redirect(redirectUrl);
 
     } catch (error) {
         return res.redirect(
@@ -260,4 +260,3 @@ export const logout = async (req, res) => {
     })
   }
 }
-

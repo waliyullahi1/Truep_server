@@ -42,7 +42,7 @@ export const createOrderPayment = async (req, res) => {
 
 
 
-// import Wallet from "../model/Wallet.js";
+import Wallet from "../model/Wallet.js";
 
 //  async function initializePlatformWallet() {
 
@@ -68,7 +68,7 @@ export const createOrderPayment = async (req, res) => {
 //     return newWallet;
 // }
 
-
+// initializePlatformWallet()
 export const verifyOrder = async (req, res) => {
 
     try {
@@ -112,17 +112,29 @@ export const getTransactionbyProperty = async (req, res) => {
 
     // Find all payments for this property
     const transactions = await Payment.find({
-      property: slug
+      property: slug,
+      $or: [
+            {
+            
+              payer: req.user._id,
+            },
+            {
+              receiver: req.user._id,
+            },
+          ],
     })
       .populate("payer", "firstName lastName phone")
       .populate("receiver", "firstName lastName email")
       .populate("property", "title location")
       .sort({ createdAt: -1 });
-
+        const wallet = await Wallet.findOne({
+        ownerType: "PLATFORM"
+    });
     return res.status(200).json({
       success: true,
       message: "Property transactions fetched successfully.",
-      data: transactions
+      data: transactions,
+      wallet: wallet,
     });
     
     

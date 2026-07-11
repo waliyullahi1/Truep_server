@@ -200,6 +200,7 @@ class PaymentService {
             await session.commitTransaction();
 
             return {
+                otherDetails: response,
                 payment: payments[0],
                 order,
                 checkoutUrl: response.data.authorization_url
@@ -318,7 +319,7 @@ class PaymentService {
                 order.totalAmount - order.escrowAmount,
                 0
             );
-
+ 
             if (order.remainingAmount === 0) {
                 order.escrowStatus = "FUNDED";
                 order.orderStatus = "PAID";

@@ -37,20 +37,20 @@ class PaystackService {
     /**
  * Get Paystack Transaction Fee
  */
-    calculatePaystackFee(amount) {
-        amount = Number(amount);
+    calculatePaystackFee(amountInKobo) {
+        const amount = amountInKobo / 100;
 
         let fee = amount * 0.015;
 
         if (amount >= 2500) {
-            fee += 100;
+            fee += 200;
         }
 
         if (fee > 2000) {
             fee = 2000;
         }
 
-        return Math.round(fee);
+        return Math.round(fee * 100); // return Kobo
     }
 
     async initializeTransaction({
