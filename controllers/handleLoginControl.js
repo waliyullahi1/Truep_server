@@ -106,7 +106,7 @@ export const handleLogin = async (req, res) => {
       // Send access token
       res.status(200).json({ data: foundUser  });
   } else if (authProvider === 'google') {
-                const redirect =  req.query.redirect || process.env.FRONTEND_BASE_URL/search;
+                const redirect =  req.query.redirect || `${process.env.FRONTEND_BASE_URL}/search`;
      const googleOAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
                 const params = new URLSearchParams({
                     client_id: process.env.GOOGLE_CLIENT_ID,
