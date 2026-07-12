@@ -242,24 +242,38 @@ export const updatePassword = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
-        // Set HTTP-only cookie
+    const refreshToken = req.cookies.jwt;
 
-    res.clearCookie('jwt', {
+    if (!refreshToken) {
+      return res.sendStatus(204); // No cookie
+    }
+
+    // Find the user by refresh token
+    const user = await Usertp.findOne({ refreshToken });
+
+    if (user) {
+      user.refreshToken = "";
+      await user.save();
+    }
+
+    // Clear the cookie
+    res.clearCookie("jwt", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
-    })
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
+    });
 
     return res.status(200).json({
       success: true,
-      message: 'Logged out successfully'
-    })
-
+      message: "Logged out successfully",
+    });
   } catch (err) {
+    console.log(err);
+    
     return res.status(500).json({
       success: false,
-      message: 'Logout failed',
-      error: err.message
-    })
+      message: "Logout failed",
+      error: err.message,
+    });
   }
-}
+};

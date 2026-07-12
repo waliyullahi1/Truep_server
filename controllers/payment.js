@@ -2,47 +2,51 @@
 import PaymentService from "../service/payment.service.js";
 import Payment from "../model/payments.js";
 import Propert from "../model/Property.js";
+import { paymentEscrowNotificationTemplate } from "../template/payment.js";
+import Usertp from "../model/Users.js";
+import { bravo_sendEmail } from "../service/bravoemail.js";
 export const createOrderPayment = async (req, res) => {
 
-    try {
-        console.log('pamentc1');
+  try {
+    console.log('pamentc1');
 
-        const result = await PaymentService.createOrderPayment({
-            totalPlot: req.body.totalPlot,
-            buyer: req.user,
-            propertyId: req.body.propertyId,
-            amount: req.body.amount
+    const result = await PaymentService.createOrderPayment({
+      totalPlot: req.body.totalPlot,
+      buyer: req.user,
+      propertyId: req.body.propertyId,
+      amount: req.body.amount
 
-        });
-        console.log(" payment initialized successful");
-        return res.status(200).json({
+    });
+    console.log(" payment initialized successful");
+    return res.status(200).json({
 
-            success: true,
+      success: true,
 
-            message: "Payment initialized successfully.",
+      message: "Payment initialized successfully.",
 
-            data: result
+      data: result
 
-        });
+    });
 
-    } catch (err) {
-        console.log(err);
+  } catch (err) {
+    console.log(err);
 
-        return res.status(400).json({
+    return res.status(400).json({
 
-            success: false,
+      success: false,
 
-            message: err.message
+      message: err.message
 
-        });
+    });
 
-    }
+  }
 
 };
 
 
 
 import Wallet from "../model/Wallet.js";
+import PropertyOrder from "../model/PropertyOrder.js";
 
 //  async function initializePlatformWallet() {
 
@@ -71,34 +75,55 @@ import Wallet from "../model/Wallet.js";
 // initializePlatformWallet()
 export const verifyOrder = async (req, res) => {
 
-    try {
-        const ref = req.body.ref;
+  try {
+    const ref = req.body.ref;
+    const result = await PaymentService.verifyOrderPayment(ref);
 
 
-        const result = await PaymentService.verifyOrderPayment(ref);
+    const property = await Propert.findById(result.property).populate("userId");
 
-        return res.status(200).json({
+    const seller = property.userId;
 
-            success: true,
+    const buyer = await Usertp.findById(result.payer);
 
-            message: "Payment initialized successfully.",
+    const order = await PropertyOrder.findById(result.order);
 
-            data: result
+    const emailRes = await bravo_sendEmail({
+      to: property.userId.email,
+      subject: "You've Received a New Property Payment (Held in Escrow)",
+      html: paymentEscrowNotificationTemplate(
+        `${seller.firstName} ${seller.lastName}`,
+        `${buyer.firstName} ${buyer.lastName}`,
+        result.creditAmount,
+        order.escrowAmount,
+        property.title,
+        `${process.env.FRONTEND_BASE_URL}property/payment/${property.slug}`
+      )
+    })
+    console.log(emailRes);
 
-        });
+    return res.status(200).json({
 
-    } catch (err) {
-        console.log(err);
+      success: true,
 
-        return res.status(400).json({
+      message: "Payment initialized successfully.",
 
-            success: false,
+      data: result
 
-            message: err.message
+    });
 
-        });
+  } catch (err) {
+    console.log(err);
 
-    }
+    return res.status(400).json({
+
+      success: false,
+
+      message: err.message
+
+    });
+
+  }
 
 };
 
@@ -107,28 +132,29 @@ export const getTransactionbyProperty = async (req, res) => {
     console.log('getTransactionbyProperty');
     const { slug } = req.params;
 
-    console.log(slug,'slug');
-    
+    console.log(slug, 'slug');
+
 
     // Find all payments for this property
     const transactions = await Payment.find({
       property: slug,
+      status: "SUCCESS",
       $or: [
-            {
-            
-              payer: req.user._id,
-            },
-            {
-              receiver: req.user._id,
-            },
-          ],
+        {
+
+          payer: req.user._id,
+        },
+        {
+          receiver: req.user._id,
+        },
+      ],
     })
       .populate("payer", "firstName lastName phone")
       .populate("receiver", "firstName lastName email")
       .populate("property", "title location")
       .sort({ createdAt: -1 });
-        const wallet = await Wallet.findOne({
-        ownerType: "PLATFORM"
+    const wallet = await Wallet.findOne({
+      ownerType: "PLATFORM"
     });
     return res.status(200).json({
       success: true,
@@ -136,8 +162,8 @@ export const getTransactionbyProperty = async (req, res) => {
       data: transactions,
       wallet: wallet,
     });
-    
-    
+
+
   } catch (err) {
     console.error(err);
 

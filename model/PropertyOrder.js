@@ -1,7 +1,15 @@
 import mongoose from "mongoose";
 
 const { Schema } = mongoose;
-
+const ImageSchema = new Schema({
+  url: { type: String, required: true },
+  public_id: String,
+  type: {
+    type: String,
+    enum: ['buyerPhoto', 'propertyPhoto', 'agreementPhoto', 'ogimage'],
+    default: 'image'
+  }
+}, { timestamps: true });
 const PropertyOrderSchema = new Schema(
   {
 
@@ -39,7 +47,7 @@ const PropertyOrderSchema = new Schema(
     },
 
     // Total amount successfully received
-     amountPaid: {
+    amountPaid: {
       type: Number,
       default: 0,
       min: 0
@@ -134,7 +142,7 @@ const PropertyOrderSchema = new Schema(
       }
     ],
 
-
+inspectionEvidence: [ImageSchema],
 
     paidAt: Date,
 

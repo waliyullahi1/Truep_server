@@ -259,7 +259,6 @@ export const getPropertyById = async (req, res) => {
       property = await Propert.findOne({ slug: id }).populate("userId");
     }
 
-    // Property not found
     if (!property) {
       return res.status(404).json({
         success: false,
@@ -271,7 +270,6 @@ export const getPropertyById = async (req, res) => {
     let decoded = null;
     let order = null;
 
-    // Optional authentication
     const token = req.cookies?.jwt;
 
     if (token) {
@@ -281,29 +279,23 @@ export const getPropertyById = async (req, res) => {
           process.env.REFRESH_TOKEN_SECRETY
         );
 
-        // Check ownership
-        if (
-          decoded.id.toString() === property.userId._id.toString()
-        ) {
-          isOwner = true;
+        // Check if logged-in user owns the property
+        isOwner =
+          decoded.id.toString() ===
+          property.userId._id.toString();
+
+        if (isOwner) {
+          // Seller gets the property's order
+          order = await PropertyOrder.findOne({
+            property: property._id,
+          });
+        } else {
+          // Buyer only gets THEIR order
+          order = await PropertyOrder.findOne({
+            property: property._id,
+            buyer: decoded.id,
+          });
         }
-
-        // Check if an order exists between the logged-in user
-        // and the property owner
-        order = await PropertyOrder.findOne({
-          property: property._id,
-          $or: [
-            {
-              seller: property.userId._id,
-              buyer: decoded.id,
-            },
-            {
-              seller: decoded.id,
-              buyer: property.userId._id,
-            },
-          ],
-        });
-
       } catch (err) {
         console.log("JWT invalid or expired");
       }
@@ -315,7 +307,6 @@ export const getPropertyById = async (req, res) => {
       order,
       data: property,
     });
-
   } catch (error) {
     console.error("PROPERTY ERROR:", error);
 
@@ -326,8 +317,6 @@ export const getPropertyById = async (req, res) => {
     });
   }
 };
-
-
 
 
 

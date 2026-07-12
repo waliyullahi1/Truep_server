@@ -219,7 +219,7 @@ class PaymentService {
 
     }
 
-
+    
     static async verifyOrderPayment(txRef) {
         const session = await mongoose.startSession();
 
@@ -298,7 +298,12 @@ class PaymentService {
             payment.paidAt = transaction.paid_at || new Date();
 
             await payment.save({ session });
-
+            /*--------------------------------------------------
+            Update Property
+            --------------------------------------------------*/
+            const property =  await Propert.findById(payment.property).session()
+            property.status = "off_market";
+             await property.save({ session });
             /*--------------------------------------------------
             Credit Platform Wallet
             --------------------------------------------------*/

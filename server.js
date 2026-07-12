@@ -28,6 +28,7 @@ import kycRoutes from "./route/api/kyc.js"
 import adminRoutes from "./route/api/admin.js"
 import paymentRoute from "./route/api/payment.js"
 import pingRoutes from "./route/ping.js"
+import orderRoutes from "./route/api/order.js"
 const app = express()
 
 const PORT = process.env.PORT || 5000
@@ -74,7 +75,7 @@ app.use("/admin", adminRoutes)
 app.use("/inspection", inspectRoute)
 app.use('/ping', pingRoutes);
 app.use('/payment', paymentRoute)
-
+app.use('/order', orderRoutes)
 // Test route
 app.get(
   "/red(.html)?",
