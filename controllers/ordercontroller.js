@@ -477,3 +477,174 @@ export const getBuyerOrders = async (req, res) => {
     }
 
 };
+
+export const getOrders = async (req, res) => {
+  try {
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.max(Number(req.query.limit) || 10, 1);
+    const skip = (page - 1) * limit;
+
+    const {
+      search = "",
+      status = "",
+      sort = "-createdAt",
+      type = "all",
+    } = req.query;
+
+    const filter = {};
+
+    /* ============================
+       Incoming / Outgoing
+    ============================ */
+
+    switch (type) {
+      case "in":
+        // Orders placed on my properties
+        filter.seller = req.user._id;
+        break;
+
+      case "out":
+        // Orders I placed
+        filter.buyer = req.user._id;
+        break;
+
+      case "all":
+      default:
+        filter.$or = [
+          { buyer: req.user._id },
+          { seller: req.user._id },
+        ];
+        break;
+    }
+
+    /* ============================
+       Escrow Status
+    ============================ */
+
+    if (status) {
+      filter.escrowStatus = status;
+    }
+
+    /* ============================
+       Search
+    ============================ */
+
+    if (search.trim()) {
+      const properties = await Property.find({
+        title: {
+          $regex: search,
+          $options: "i",
+        },
+      }).select("_id");
+
+      const propertyIds = properties.map((p) => p._id);
+
+      const searchCondition = {
+        $or: [
+          {
+            orderNumber: {
+              $regex: search,
+              $options: "i",
+            },
+          },
+          {
+            property: {
+              $in: propertyIds,
+            },
+          },
+        ],
+      };
+
+      if (filter.$or) {
+        filter.$and = [
+          {
+            $or: filter.$or,
+          },
+          searchCondition,
+        ];
+
+        delete filter.$or;
+      } else {
+        Object.assign(filter, searchCondition);
+      }
+    }
+
+    /* ============================
+       Count
+    ============================ */
+
+    const total = await PropertyOrder.countDocuments(filter);
+
+    /* ============================
+       Orders
+    ============================ */
+
+    const orders = await PropertyOrder.find(filter)
+      .populate({
+        path: "property",
+        select:
+          "title slug media.images pricing location purpose type",
+      })
+      .populate({
+        path: "buyer",
+        select:
+          "firstName lastName email phone profileImage",
+      })
+      .populate({
+        path: "seller",
+        select:
+          "firstName lastName email phone profileImage",
+      })
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    /* ============================
+       Add Direction + Progress
+    ============================ */
+
+    const formattedOrders = orders.map((order) => {
+      const totalAmount = Number(order.totalAmount || 0);
+      const paidAmount = Number(order.amountPaid || 0);
+
+      return {
+        ...order,
+
+        direction:
+          String(order.buyer._id) === String(req.user._id)
+            ? "OUT"
+            : "IN",
+
+        progress:
+          totalAmount > 0
+            ? Math.round((paidAmount / totalAmount) * 100)
+            : 0,
+      };
+    });
+
+    /* ============================
+       Response
+    ============================ */
+
+    return res.status(200).json({
+      success: true,
+
+      orders: formattedOrders,
+
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};

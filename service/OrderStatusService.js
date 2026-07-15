@@ -9,7 +9,9 @@ class OrderStatusService {
 
         try {
 
-
+             if (user.roles === "Admin") {
+                return "admin";
+            }
             if (order.buyer.equals(user._id)) {
                 return "buyer";
             }

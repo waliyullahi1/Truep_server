@@ -173,3 +173,32 @@ export const getTransactionbyProperty = async (req, res) => {
     });
   }
 };
+
+export const getTransactionpayemt= async (req,res) => {
+   try {
+
+
+    // Find all payments for this property
+    const transactions = await Payment.find({ status: "SUCCESS", payer: req.user._id,})
+      .populate("property", "title location")
+      .sort({ createdAt: -1 });
+    const wallet = await Wallet.findOne({
+      ownerType: "PLATFORM"
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Property transactions fetched successfully.",
+      data: transactions,
+      wallet: wallet,
+    });
+
+
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch property transactions."
+    });
+  } 
+}

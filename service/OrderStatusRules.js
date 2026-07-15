@@ -252,7 +252,8 @@ export const ESCROW_RULES = {
                         session
 
                     });
-
+                    console.log(order.seller);
+                    
                     await WalletService.creditUserWallet({
 
                         userId: order.seller,
@@ -361,7 +362,7 @@ export const ESCROW_RULES = {
 
                         reference: order.orderNumber,
 
-                        description: "Escrow refund",
+                        description: "Escrow refund  ",
 
                         session
 

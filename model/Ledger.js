@@ -95,6 +95,8 @@ const WalletLedgerSchema = new Schema(
       index: true
     },
 
+
+
     description: {
       type: String,
       trim: true
@@ -139,7 +141,6 @@ WalletLedgerSchema.index({
   wallet: 1,
   createdAt: -1
 });
-
 
 
 

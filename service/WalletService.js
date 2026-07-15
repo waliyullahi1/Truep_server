@@ -1,5 +1,6 @@
 import Wallet from "../model/Wallet.js";
 import Ledger from "../model/Ledger.js";
+import Usertp from '../model/Users.js'
 
 
 // await WalletService.creditUserWallet({
@@ -112,48 +113,200 @@ class WalletService {
     /**
  * Debit Platform Wallet
  */
-static async debitPlatformWallet({
-    payment = null,
-    order = null,
-    refund = null,
-    amount,
-    category,
-    reference,
-    description,
-    metadata = {},
-    session
-}) {
+    static async debitPlatformWallet({
+        payment = null,
+        order = null,
+        refund = null,
+        amount,
+        category,
+        reference,
+        description,
+        metadata = {},
+        session
+    }) {
 
-    /*------------------------------------
-    Find Platform Wallet
-    ------------------------------------*/
-    const wallet = await Wallet.findOne({
-        ownerType: "PLATFORM",
-        status: "ACTIVE"
-    }).session(session);
+        /*------------------------------------
+        Find Platform Wallet
+        ------------------------------------*/
+        const wallet = await Wallet.findOne({
+            ownerType: "PLATFORM",
+            status: "ACTIVE"
+        }).session(session);
 
-    if (!wallet) {
-        throw new Error("Platform wallet not found.");
+        if (!wallet) {
+            throw new Error("Platform wallet not found.");
+        }
+
+        if (wallet.balance < amount) {
+            throw new Error("Insufficient platform wallet balance.");
+        }
+
+        /*------------------------------------
+        Debit Wallet
+        ------------------------------------*/
+        const balanceBefore = wallet.balance;
+
+        wallet.debit(amount);
+
+        await wallet.save({ session });
+
+        /*------------------------------------
+        Create Ledger
+        ------------------------------------*/
+        await Ledger.create(
+            [{
+                wallet: wallet._id,
+
+                payment: payment?._id || null,
+
+                order: order?._id || null,
+
+                refund: refund?._id || null,
+
+                type: "DEBIT",
+
+                category,
+
+                amount,
+
+                currency: wallet.currency,
+
+                balanceBefore,
+
+                balanceAfter: wallet.balance,
+
+                reference,
+
+                description,
+
+                status: "COMPLETED",
+
+                metadata
+            }],
+            { session }
+        );
+
+        return wallet;
     }
 
-    if (wallet.balance < amount) {
-        throw new Error("Insufficient platform wallet balance.");
+
+    /**
+     * Credit User Wallet
+     */
+    static async creditUserWallet({
+        userId,
+        payment = null,
+        order = null,
+        refund = null,
+        amount,
+        category,
+        reference,
+        description,
+        metadata = {},
+        session
+    }) {
+
+        let wallet = await Wallet.findOne({
+            owner: userId,
+            ownerType: "USER",
+            status: "ACTIVE"
+        }).session(session);
+
+        if (!wallet) {
+
+            const user = await Usertp.findById(userId).session(session);
+
+            if (!user) {
+                throw new Error("User not found.");
+            }
+
+            wallet = await Wallet.create([{
+                owner: user._id,
+                ownerType: "USER",
+                currency: "NGN",
+                balance: 0,
+                status: "ACTIVE"
+            }], { session });
+
+            wallet = wallet[0]; // create() with session returns an array
+        }
+
+        const balanceBefore = wallet.balance;
+
+        wallet.credit(amount);
+
+        await wallet.save({ session });
+
+        await Ledger.create([{
+            wallet: wallet._id,
+
+            payment: payment?._id || null,
+
+            order: order?._id || null,
+
+            refund: refund?._id || null,
+
+            type: "CREDIT",
+
+            category,
+
+            amount,
+
+            currency: wallet.currency,
+
+            balanceBefore,
+
+            balanceAfter: wallet.balance,
+
+            reference,
+
+            description,
+
+            status: "COMPLETED",
+
+            metadata
+        }], { session });
+
+        return wallet;
     }
 
-    /*------------------------------------
-    Debit Wallet
-    ------------------------------------*/
-    const balanceBefore = wallet.balance;
+    /**
+     * Debit User Wallet
+     */
+    static async debitUserWallet({
+        userId,
+        payment = null,
+        order = null,
+        refund = null,
+        amount,
+        category,
+        reference,
+        description,
+        metadata = {},
+        session
+    }) {
 
-    wallet.debit(amount);
+        const wallet = await Wallet.findOne({
+            owner: userId,
+            ownerType: "USER",
+            status: "ACTIVE"
+        }).session(session);
 
-    await wallet.save({ session });
+        if (!wallet) {
+            throw new Error("User wallet not found.");
+        }
 
-    /*------------------------------------
-    Create Ledger
-    ------------------------------------*/
-    await Ledger.create(
-        [{
+        if (wallet.balance < amount) {
+            throw new Error("Insufficient wallet balance.");
+        }
+
+        const balanceBefore = wallet.balance;
+
+        wallet.debit(amount);
+
+        await wallet.save({ session });
+
+        await Ledger.create([{
             wallet: wallet._id,
 
             payment: payment?._id || null,
@@ -181,147 +334,10 @@ static async debitPlatformWallet({
             status: "COMPLETED",
 
             metadata
-        }],
-        { session }
-    );
+        }], { session });
 
-    return wallet;
-}
-
-
-/**
- * Credit User Wallet
- */
-static async creditUserWallet({
-    userId,
-    payment = null,
-    order = null,
-    refund = null,
-    amount,
-    category,
-    reference,
-    description,
-    metadata = {},
-    session
-}) {
-
-    const wallet = await Wallet.findOne({
-        owner: userId,
-        ownerType: "USER",
-        status: "ACTIVE"
-    }).session(session);
-
-    if (!wallet) {
-        throw new Error("User wallet not found.");
+        return wallet;
     }
-
-    const balanceBefore = wallet.balance;
-
-    wallet.credit(amount);
-
-    await wallet.save({ session });
-
-    await Ledger.create([{
-        wallet: wallet._id,
-
-        payment: payment?._id || null,
-
-        order: order?._id || null,
-
-        refund: refund?._id || null,
-
-        type: "CREDIT",
-
-        category,
-
-        amount,
-
-        currency: wallet.currency,
-
-        balanceBefore,
-
-        balanceAfter: wallet.balance,
-
-        reference,
-
-        description,
-
-        status: "COMPLETED",
-
-        metadata
-    }], { session });
-
-    return wallet;
-}
-
-/**
- * Debit User Wallet
- */
-static async debitUserWallet({
-    userId,
-    payment = null,
-    order = null,
-    refund = null,
-    amount,
-    category,
-    reference,
-    description,
-    metadata = {},
-    session
-}) {
-
-    const wallet = await Wallet.findOne({
-        owner: userId,
-        ownerType: "USER",
-        status: "ACTIVE"
-    }).session(session);
-
-    if (!wallet) {
-        throw new Error("User wallet not found.");
-    }
-
-    if (wallet.balance < amount) {
-        throw new Error("Insufficient wallet balance.");
-    }
-
-    const balanceBefore = wallet.balance;
-
-    wallet.debit(amount);
-
-    await wallet.save({ session });
-
-    await Ledger.create([{
-        wallet: wallet._id,
-
-        payment: payment?._id || null,
-
-        order: order?._id || null,
-
-        refund: refund?._id || null,
-
-        type: "DEBIT",
-
-        category,
-
-        amount,
-
-        currency: wallet.currency,
-
-        balanceBefore,
-
-        balanceAfter: wallet.balance,
-
-        reference,
-
-        description,
-
-        status: "COMPLETED",
-
-        metadata
-    }], { session });
-
-    return wallet;
-}
 
 }
 

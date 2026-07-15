@@ -14,7 +14,7 @@ router.post("/:id", protect,  updateproperty);
 router.patch('/:id/status', protect, updatePropertyStatus)
 
 
-updateogImage
+
 
 router.delete("/:id", protect, deleteProperty);
 router.get("/:id",   getPropertyById);
