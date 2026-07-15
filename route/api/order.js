@@ -1,12 +1,12 @@
 import express from "express";
 const router = express.Router()
-import {    OrderEvidenImageUpload, getOrderEvidence,  deleteOrderEvidence } from "../../controllers/ordercontroller.js";
+import {  getBuyerOrders, changeEscrowStatus,  OrderEvidenImageUpload, getOrderEvidence,  deleteOrderEvidence } from "../../controllers/ordercontroller.js";
 import { protect} from "../../middleware/auth.js";
 import uploadAvatar from "../../middleware/upload.js"
 // router.post("/upload-avatar", protect,  uploadAvatar.single("avatar"), updateproperty);
 
 
-
+router.get("/", protect,  getBuyerOrders)
 router.post('/evidence/upload/:id/:type',  protect, uploadAvatar.single("file"), OrderEvidenImageUpload)
 // router.post("/:id", protect,  updateproperty);
 // router.patch('/:id/status', protect, updatePropertyStatus)
@@ -20,7 +20,7 @@ router.get("/evidence/:id", protect,  getOrderEvidence);
 
 
 
-
+router.post("/status/:id/:action", protect, changeEscrowStatus)
 
 // router.get("/images/:id", protect,  getPropertyImages);
 // router.delete("/image/:id", protect,  deletePropertyImage);

@@ -11,7 +11,7 @@ import {  bravo_sendEmail } from "../service/bravoemail.js";
 
 export const handleNewUsers = async (req, res) => {
   try {
-    const { firstName, lastName, password, email } = req.body;
+    const { firstName, lastName, password, email, phone } = req.body;
 
     // ============================= VALIDATION =============================
     if (!firstName || !lastName || !password || !email) {
@@ -66,6 +66,7 @@ export const handleNewUsers = async (req, res) => {
       firstName,
       lastName,
       email,
+      phone,
       password: hashedPwd,
       emailVerificationToken: otp,
       emailVerified: false

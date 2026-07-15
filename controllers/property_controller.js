@@ -7,7 +7,7 @@ import mongoose from 'mongoose'
 import slugify from "slugify"
 import puppeteer from "puppeteer"
 import PropertyOrder from "../model/PropertyOrder.js";
-
+import Usertp from "../model/Users.js";
 
 /* =====================================================
    UPDATE / CREATE PROPERTY WITH AUTO SLUG
@@ -248,11 +248,13 @@ export const updatePropertyStatus = async (req, res) => {
 
 export const getPropertyById = async (req, res) => {
   try {
-    const id = req.params.id;
+    const { id } = req.params;
 
-    let property = null;
+    /*--------------------------------------------------
+    Find Property by ObjectId or Slug
+    --------------------------------------------------*/
+    let property;
 
-    // Find by ObjectId or slug
     if (mongoose.Types.ObjectId.isValid(id)) {
       property = await Propert.findById(id).populate("userId");
     } else {
@@ -267,37 +269,90 @@ export const getPropertyById = async (req, res) => {
     }
 
     let isOwner = false;
-    let decoded = null;
     let order = null;
 
     const token = req.cookies?.jwt;
 
+    /*--------------------------------------------------
+    Logged In User
+    --------------------------------------------------*/
     if (token) {
       try {
-        decoded = jwt.verify(
+        const decoded = jwt.verify(
           token,
           process.env.REFRESH_TOKEN_SECRETY
         );
 
-        // Check if logged-in user owns the property
         isOwner =
-          decoded.id.toString() ===
-          property.userId._id.toString();
+          property.userId._id.toString() === decoded.id.toString();
 
-        if (isOwner) {
-          // Seller gets the property's order
-          order = await PropertyOrder.findOne({
-            property: property._id,
-          });
-        } else {
-          // Buyer only gets THEIR order
-          order = await PropertyOrder.findOne({
-            property: property._id,
-            buyer: decoded.id,
+        /*--------------------------------------------------
+        Build Order Query
+        --------------------------------------------------*/
+        let orderQuery = PropertyOrder.findOne(
+          isOwner
+            ? {
+                property: property._id,
+              }
+            : {
+                property: property._id,
+                buyer: decoded.id,
+              }
+        );
+
+        /*--------------------------------------------------
+        Admin
+        Gets Buyer + Seller + Property
+        --------------------------------------------------*/
+        const user = await Usertp.findById(decoded.id.toString()) 
+        
+        
+        if (user.roles === "Admin") {
+          console.log('Admin');
+          
+          orderQuery = orderQuery
+            .populate({
+              path: "buyer",
+              select:
+                "firstName lastName email whatsapp_no phone avatar location",
+            })
+            .populate({
+              path: "seller",
+              select:
+               "firstName lastName email whatsapp_no phone avatar location",
+            })
+            
+        }
+
+        /*--------------------------------------------------
+        Seller
+        Gets Buyer Only
+        --------------------------------------------------*/
+        else if (isOwner) {
+           console.log('onwerner');
+          orderQuery = orderQuery.populate({
+            path: "buyer",
+            select:
+              "firstName lastName email whatsapp_no phone avatar location",
           });
         }
+
+        /*--------------------------------------------------
+        Buyer
+        Gets Seller Only
+        --------------------------------------------------*/
+        else {
+           console.log('buyer');
+          orderQuery = orderQuery.populate({
+            path: "seller",
+            select:
+             "firstName lastName email whatsapp_no phone avatar location",
+          });
+        }
+
+        order = await orderQuery;
       } catch (err) {
-        console.log("JWT invalid or expired");
+        console.log("JWT invalid or expired:", err.message);
       }
     }
 
@@ -317,7 +372,6 @@ export const getPropertyById = async (req, res) => {
     });
   }
 };
-
 
 
 

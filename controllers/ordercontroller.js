@@ -7,6 +7,7 @@ import mongoose from 'mongoose'
 import slugify from "slugify"
 import puppeteer from "puppeteer"
 import PropertyOrder from "../model/PropertyOrder.js";
+import OrderStatusService from "../service/OrderStatusService.js";
 
 
 
@@ -57,7 +58,7 @@ export const OrderEvidenImageUpload = async (req, res) => {
         message: "Order not found."
       });
     }
-console.log('reach6');
+
     /*---------------------------------------
     Buyer must have paid
     ---------------------------------------*/
@@ -74,7 +75,7 @@ console.log('reach6');
           "Inspection evidence can only be uploaded after payment has been successfully received."
       });
     }
-console.log('reach6');
+
     /*---------------------------------------
     Upload to Cloudinary
     ---------------------------------------*/
@@ -86,7 +87,7 @@ console.log('reach6');
       public_id: result.public_id,
       type
     };
-console.log('reach8');
+
     /*---------------------------------------
     Only one buyer photo
     ---------------------------------------*/
@@ -95,7 +96,7 @@ console.log('reach8');
         img => img.type !== "buyerPhoto"
       );
     }
-    console.log('reach9');
+
     /*---------------------------------------
     Only one agreement photo
     ---------------------------------------*/
@@ -104,14 +105,14 @@ console.log('reach8');
         img => img.type !== "agreementPhoto"
       );
     }
-console.log('reach10');
+
     /*---------------------------------------
     Save new image
     ---------------------------------------*/
     order.inspectionEvidence.push(newImage);
 
     await order.save();
-    console.log('reach11');
+ 
     /*---------------------------------------
     Return grouped data
     ---------------------------------------*/
@@ -280,4 +281,199 @@ export const deleteOrderEvidence = async (req, res) => {
       error: error.message
     });
   }
+};
+
+
+
+
+export const changeEscrowStatus = async (req, res) => {
+
+    const session = await mongoose.startSession();
+
+    try {
+
+        await session.startTransaction();
+
+        const { id, action } = req.params;
+
+        const order = await PropertyOrder
+            .findById(id)
+            .populate("property")
+            .session(session);
+
+        if (!order) {
+            throw new Error("Order not found.");
+        }
+
+        const updatedOrder =
+            await OrderStatusService.changeStatus({
+
+                order,
+                action,
+                user: req.user,
+                session
+
+            });
+
+        await session.commitTransaction();
+
+        return res.status(200).json({
+
+            success: true,
+            message: `Escrow action '${action}' completed successfully.`,
+            data: updatedOrder.toObject()
+
+        });
+
+    } catch (err) {
+
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
+
+        return res.status(500).json({
+
+            success: false,
+            message: err.message
+
+        });
+
+    } finally {
+
+        await session.endSession();
+
+    }
+
+};
+
+
+
+export const getBuyerOrders = async (req, res) => {
+
+    try {
+
+        const page = Math.max(Number(req.query.page) || 1, 1);
+
+        const limit = Math.max(Number(req.query.limit) || 10, 1);
+
+        const skip = (page - 1) * limit;
+
+        const {
+            search = "",
+            status = "",
+            sort = "-createdAt"
+        } = req.query;
+
+        const filter = {
+
+            buyer: req.user._id
+
+        };
+
+        if (status) {
+
+            filter.escrowStatus = status;
+
+        }
+
+        /*------------------------------------
+        Search Property
+        ------------------------------------*/
+
+        let propertyIds = [];
+
+        if (search.trim()) {
+
+            const properties = await Property.find({
+
+                title: {
+
+                    $regex: search,
+
+                    $options: "i"
+
+                }
+
+            }).select("_id");
+
+            propertyIds = properties.map(item => item._id);
+
+            filter.property = {
+
+                $in: propertyIds
+
+            };
+
+        }
+
+        /*------------------------------------
+        Total
+        ------------------------------------*/
+
+        const total = await PropertyOrder.countDocuments(filter);
+
+        /*------------------------------------
+        Orders
+        ------------------------------------*/
+
+        const orders = await PropertyOrder.find(filter)
+
+            .populate({
+
+                path: "property",
+
+                select: "title slug media.images pricing location"
+
+            })
+
+            .populate({
+
+                path: "seller",
+
+                select: "firstName lastName profileImage phone"
+
+            })
+
+            .sort(sort)
+
+            .skip(skip)
+
+            .limit(limit);
+
+        return res.status(200).json({
+
+            success: true,
+
+            orders,
+
+            pagination: {
+
+                page,
+
+                limit,
+
+                total,
+
+                totalPages: Math.ceil(total / limit)
+
+            }
+
+        });
+
+    }
+
+    catch (err) {
+
+        console.log(err);
+
+        return res.status(500).json({
+
+            success: false,
+
+            message: err.message
+
+        });
+
+    }
+
 };

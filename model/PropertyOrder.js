@@ -27,14 +27,14 @@ const PropertyOrderSchema = new Schema(
 
     buyer: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Usertp",
       required: true,
       index: true
     },
 
     seller: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Usertp",
       required: true,
       index: true
     },
@@ -114,6 +114,8 @@ const PropertyOrderSchema = new Schema(
         "PARTIALLY_FUNDED",
         "PARTIALLY_RELEASED",
         "RELEASED",
+        "RELEASE_PENDING",
+        "REFUND_PENDING",
         "REFUNDED"
       ],
       default: "NOT_FUNDED",
