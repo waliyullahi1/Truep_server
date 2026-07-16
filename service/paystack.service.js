@@ -85,7 +85,7 @@ class PaystackService {
                 {
                     email,
 
-                    amount: totalWithCharges ,
+                    amount: totalWithCharges,
 
                     reference,
 
@@ -155,6 +155,83 @@ class PaystackService {
             throw new Error(
                 error.response?.data?.message ||
                 "Unable to verify transaction."
+            );
+
+        }
+
+    }
+
+    async getBanks(country = "nigeria") {
+
+        try {
+
+            const { data } = await this.http.get("/bank", {
+
+                params: {
+
+                    country,
+                    currency: "NGN"
+
+                }
+
+            });
+
+            return data;
+
+        } catch (error) {
+
+            console.error(
+                "Paystack Get Banks Error:",
+                error.response?.data || error.message
+            );
+
+            throw new Error(
+                error.response?.data?.message ||
+                "Unable to fetch banks."
+            );
+
+        }
+
+    }
+
+    /*
+|--------------------------------------------------------------------------
+| Resolve Account Number
+|--------------------------------------------------------------------------
+*/
+
+    async resolveAccountNumber({
+
+        accountNumber,
+        bankCode
+
+    }) {
+
+        try {
+
+            const { data } = await this.http.get("/bank/resolve", {
+
+                params: {
+
+                    account_number: accountNumber,
+                    bank_code: bankCode
+
+                }
+
+            });
+
+            return data;
+
+        } catch (error) {
+
+            console.error(
+                "Paystack Resolve Account Error:",
+                error.response?.data || error.message
+            );
+
+            throw new Error(
+                error.response?.data?.message ||
+                "Unable to verify bank account."
             );
 
         }

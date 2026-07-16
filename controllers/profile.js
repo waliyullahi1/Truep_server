@@ -5,7 +5,7 @@ import axios from "axios";
 import mongoose from 'mongoose';
 import Propert from "../model/Property.js";
 import puppeteer from "puppeteer"
-
+import Wallet from "../model/Wallet.js";
 export const updateAvater = async (req, res) => {
   try {
 
@@ -322,8 +322,13 @@ export const getuser = async (req, res) => {
   try {
     const user = await Usertp.findById(req.user._id).select("-password");
     const other = await Others.findOne({ userId: req.user._id }).select("-_id -location -userId -createdAt -updatedAt -__v");
+       const wallet = await Wallet.findOne({
+         owner: req.user._id,
+         ownerType: "USER",
+       }).select("balance currency status");
    
-
+       
+        
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -331,7 +336,8 @@ export const getuser = async (req, res) => {
       success: true,
        data: {
     ...user.toObject(),
-    ...(other ? other.toObject() : {})
+    ...(other ? other.toObject() : {}),
+    ...wallet.toObject()
  
   }
       

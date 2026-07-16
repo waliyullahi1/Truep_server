@@ -7,6 +7,7 @@ import { renderOtpTemplateHtml } from "../template/verifyEmail.js";
 import { ForgotPasswordTemplate } from "../template/passwordReset.js";
 import axios from 'axios';
 import {  bravo_sendEmail } from "../service/bravoemail.js";
+import Wallet from "../model/Wallet.js";
 /* ============================= CONTROLLER FUNCTIONS ============================= */
 
 export const handleNewUsers = async (req, res) => {
@@ -443,46 +444,54 @@ export const verifyResetToken = async (req, res) => {
 
 
 
-export const protectPages = async (req, res, next) => {
+export const protectPages = async (req, res) => {
+  const { jwt: refreshToken } = req.cookies;
 
-
-  const cookies = req.cookies;
-  
-  console.log(cookies, 'cookies');
-  
-  if (!cookies?.jwt) {
-   
-    return res.status(401).json({ message: "No token provided" });
-  }
-
-  const refreshToken = cookies.jwt;
- 
-
-  const foundUser = await Usertp.findOne({ refreshToken }).exec();
-  if (!foundUser) {
-    
-    return res.status(401).json({ message: "Invalid token" });
+  if (!refreshToken) {
+    return res.status(401).json({
+      success: false,
+      message: "No token provided",
+    });
   }
 
   try {
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRETY);
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRETY
+    );
 
-    if (foundUser._id.toString() !== decoded.id) {
-     
-      return res.status(403).json({ message: "Invalid token user" });
+    const foundUser = await Usertp.findOne({
+      _id: decoded.id,
+      refreshToken,
+    }).select("-password");
+
+    if (!foundUser) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
     }
 
+    const wallet = await Wallet.findOne({
+      owner: foundUser._id,
+      ownerType: "USER",
+    }).select("balance currency status");
 
-    res.status(200).json({ data:foundUser });
+    return res.status(200).json({
+      success: true,
+      data: {
+        ...foundUser.toObject(),
+        wallet,
+      },
+    });
   } catch (err) {
-    if (err instanceof jwt.TokenExpiredError) {
-     
-      return res.status(403).json({ message: "Token expired" });
-    } else {
-    
-      return res.status(403).json({ message: "Invalid token" });
-    }
+    return res.status(403).json({
+      success: false,
+      message:
+        err instanceof jwt.TokenExpiredError
+          ? "Token expired"
+          : "Invalid token",
+    });
   }
 };
-
 
