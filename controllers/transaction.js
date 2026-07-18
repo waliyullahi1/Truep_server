@@ -3,7 +3,7 @@ import Wallet from "../model/Wallet.js";
 import Ledger from "../model/Ledger.js";
 import Usertp from '../model/Users.js'
 
-
+import  WalletService  from "../service/WalletService.js"
 const transformLedger = (ledger) => {
 
     const amount = ledger.amount / 100;
@@ -162,5 +162,30 @@ export const getTransactions = async (req, res) => {
         transactions: ledgers.map(transformLedger)
 
     });
+
+};
+
+export const getWalletDashboard = async (req, res) => {
+
+    try {
+
+        const data = await WalletService.getWalletDashboard(
+            req.user._id
+        );
+
+        return res.json({
+            success: true,
+            data
+        });
+
+    } catch (err) {
+                console.log();
+                
+        return res.status(400).json({
+            success: false,
+            message: err.message
+        });
+
+    }
 
 };

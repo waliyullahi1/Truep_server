@@ -28,12 +28,7 @@ const WalletLedgerSchema = new Schema(
       index: true
     },
 
-    // Refund (if applicable)
-    refund: {
-      type: Schema.Types.ObjectId,
-      ref: "Refund",
-      default: null
-    },
+    
 
     // CREDIT or DEBIT
     type: {

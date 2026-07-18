@@ -69,3 +69,32 @@ export const verifyBankAccount = async (req, res) => {
     }
 
 }
+
+
+export const createPayout = async (req, res) => {
+
+    try {
+
+        const payout = await PayoutService.createPayout(
+            req.user._id,
+            req.body.amount
+        );
+
+        return res.status(201).json({
+            success: true,
+            message: "Withdrawal request submitted. we will contact you ",
+            data: payout,
+        });
+
+    } catch (err) {
+
+        return res.status(400).json({
+            success: false,
+            message: err.message,
+        });
+
+    }
+
+};
+
+
