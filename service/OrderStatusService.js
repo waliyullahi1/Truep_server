@@ -33,7 +33,7 @@ class OrderStatusService {
     /*-------------------------------------------------------
     Change Escrow Status
     -------------------------------------------------------*/
-    static async changeStatus({ order, action, user, session }) {
+    static async changeStatus({ order, action, user, reason, session }) {
         try {
 
 
@@ -66,7 +66,7 @@ class OrderStatusService {
             Determine Actor
             ------------------------------------*/
 
-            const actor = this.getActor(order, user);
+            const actor = this.getActor(order, user, reason);
             console.log(actor, "actor");
 
             if (!actor) {
@@ -122,9 +122,8 @@ class OrderStatusService {
             /*------------------------------------
             Save Changes
             ------------------------------------*/
-            console.log('save', 'ffff');
+          
             await order.save({ session });
-            console.log('save', 'ffff');
             return order;
         } catch (error) {
 

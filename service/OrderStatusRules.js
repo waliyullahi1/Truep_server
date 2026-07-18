@@ -129,6 +129,47 @@ export const ESCROW_RULES = {
 
                 }
 
+            },
+
+            cancel: {
+
+                to: "CANCELLED",
+
+                roles: ["buyer"],
+
+                validate({ order }) {
+
+                    Validators.hasEscrow(order);
+
+                    Validators.refundNotRequested(order);
+
+                },
+
+                async execute({ order, reason }) {
+
+                    order.metadata.refundRequestedAt = new Date();
+                  order.reasoncancel = reason;
+                },
+
+                response: {
+
+                    title: "Refund Request Submitted",
+
+                    message:
+                        "Your refund request has been received.",
+
+                    description:
+                        "The escrow team will investigate the issue and contact both parties before making a decision.",
+
+                    nextStep:
+                        "Please provide any photos, videos or supporting documents if requested.",
+
+                    estimatedTime: "2-5 business days",
+
+                    type: "info"
+
+                }
+
             }
 
         }

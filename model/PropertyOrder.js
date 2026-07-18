@@ -114,12 +114,18 @@ const PropertyOrderSchema = new Schema(
         "PARTIALLY_FUNDED",
         "PARTIALLY_RELEASED",
         "RELEASED",
+        "CANCELLED",
         "RELEASE_PENDING",
         "REFUND_PENDING",
         "REFUNDED"
       ],
       default: "NOT_FUNDED",
       index: true
+    },
+
+    reasoncancel:{
+      type: String,
+      default:null
     },
 
     orderStatus: {
