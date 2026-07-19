@@ -251,7 +251,7 @@ export const getKyc = async (req, res) => {
         data: null
       });
     }
-     await kyc.deleteOne()
+
     // KYC exists → frontend resumes from where user stopped
     return res.status(200).json({
       success: true,

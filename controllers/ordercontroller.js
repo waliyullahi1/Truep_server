@@ -304,10 +304,11 @@ export const changeEscrowStatus = async (req, res) => {
         if (!order) {
             throw new Error("Order not found.");
         }
-
+        console.log(req.body.reason);
+        
         const updatedOrder =
             await OrderStatusService.changeStatus({
-
+                reason: req.body.reason,
                 order,
                 action,
                 user: req.user,

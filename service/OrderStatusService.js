@@ -9,7 +9,7 @@ class OrderStatusService {
 
         try {
 
-             if (user.roles === "Admin") {
+            if (user.roles === "Admin") {
                 return "admin";
             }
             if (order.buyer.equals(user._id)) {
@@ -19,7 +19,7 @@ class OrderStatusService {
             if (order.seller.equals(user._id)) {
                 return "seller";
             }
-            
+
             if (user.roles === "Admin") {
                 return "admin";
             }
@@ -36,7 +36,8 @@ class OrderStatusService {
     static async changeStatus({ order, action, user, reason, session }) {
         try {
 
-
+            console.log(reason,'reasondd');
+            
             /*------------------------------------
             Current Escrow State
             ------------------------------------*/
@@ -48,14 +49,14 @@ class OrderStatusService {
                     `Unknown escrow status '${order.escrowStatus}'.`
                 );
             }
-            console.log(state, 'stat');
+           
 
             /*------------------------------------
             Action Rule
             ------------------------------------*/
 
             const rule = state.actions[action];
-            console.log(rule, 'rule');
+          
             if (!rule) {
                 throw new Error(
                     `Action '${action}' is not allowed while escrow is '${order.escrowStatus}'.`
@@ -100,7 +101,12 @@ class OrderStatusService {
             Change Escrow Status
             ------------------------------------*/
 
-            order.escrowStatus = rule.to;
+            const nextStatus =
+                typeof rule.to === "function"
+                    ? rule.to({ order })
+                    : rule.to;
+
+            order.escrowStatus = nextStatus;
 
             /*------------------------------------
             Execute Business Logic
@@ -109,7 +115,7 @@ class OrderStatusService {
             if (typeof rule.execute === "function") {
 
                 await rule.execute({
-
+                    reason,
                     order,
                     user,
                     actor,
@@ -122,8 +128,11 @@ class OrderStatusService {
             /*------------------------------------
             Save Changes
             ------------------------------------*/
-          
+
             await order.save({ session });
+
+            console.log(order);
+            
             return order;
         } catch (error) {
 

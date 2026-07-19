@@ -31,14 +31,19 @@ const Validators = {
     },
 
     releaseNotRequested(order) {
+
+        
         if (order.metadata?.releaseRequestedAt) {
             throw new Error("Release has already been requested.");
         }
     },
 
     refundNotRequested(order) {
-        if (order.metadata?.refundRequestedAt) {
-            throw new Error("Refund has already been requested.");
+        console.log(order.metadata?.refundRequestedAt, 'refundNotRequestedssssss');
+         console.log(order, 'refundNotRequested')
+        
+        if (order.metadata?.refundRequestedAt !== null) {
+            // throw new Error("Refund has already been requested.");
         }
     }
 
@@ -149,6 +154,9 @@ export const ESCROW_RULES = {
 
                     order.metadata.refundRequestedAt = new Date();
                   order.reasoncancel = reason;
+                  console.log(reason, ' reason ');
+                   console.log( order.reasoncancel,'order resen');
+                  
                 },
 
                 response: {
@@ -212,6 +220,50 @@ export const ESCROW_RULES = {
 
             },
 
+             cancel: {
+
+                to: "CANCELLED",
+
+                roles: ["buyer"],
+
+                validate({ order }) {
+
+                    Validators.hasEscrow(order);
+
+                    Validators.refundNotRequested(order);
+
+                },
+
+                async execute({ order, reason }) {
+
+                    order.metadata.refundRequestedAt = new Date();
+                  order.reasoncancel = reason;
+                  console.log(reason, ' reason ');
+                   console.log( order.reasoncancel,'order resen');
+                  
+                },
+
+                response: {
+
+                    title: "Refund Request Submitted",
+
+                    message:
+                        "Your refund request has been received.",
+
+                    description:
+                        "The escrow team will investigate the issue and contact both parties before making a decision.",
+
+                    nextStep:
+                        "Please provide any photos, videos or supporting documents if requested.",
+
+                    estimatedTime: "2-5 business days",
+
+                    type: "info"
+
+                }
+
+            },
+
             requestRefund: {
 
                 to: "REFUND_PENDING",
@@ -257,6 +309,56 @@ export const ESCROW_RULES = {
 
     },
 
+        /*--------------------------------------------------*/
+    CANCELLED: {
+
+        actions: {
+
+            reactivate: {
+
+               to: ({ order }) => {
+                    return Number(order.remainingAmount) === 0
+                        ? "FUNDED"
+                        : "PARTIALLY_FUNDED"
+                },
+
+                roles: ["buyer"],
+
+                validate({ order }) {
+
+                   
+
+                    Validators.hasEscrow(order);
+                     Validators.releaseNotRequested(order);
+
+                },
+
+                async execute({ order }) {
+                     console.log('action perform  other cancer reactivate');
+                    order.reasoncancel = null;
+                    // refundRequestedAt
+                    order.metadata.releaseRequestedAt = null;
+                    order.metadata.refundRejectedAt = null;
+                    order.metadata.releaseRejectedAt = null;
+                    order.metadata.refundRequestedAt = null;
+                },
+
+                response: {
+                    description: "The escrow team will contact both buyer and seller to confirm that the property has been inspected and handed over.",
+                    nextStep: "Funds will remain securely held until verification is complete.",
+                    estimatedTime: "1-3 business days",
+                    type: "success"
+                }
+
+            },
+
+           
+
+        }
+
+    },
+
+
     /*--------------------------------------------------*/
     RELEASE_PENDING: {
 
@@ -293,7 +395,7 @@ export const ESCROW_RULES = {
                         session
 
                     });
-                    console.log(order.seller);
+                   
                     
                     await WalletService.creditUserWallet({
 
@@ -366,7 +468,10 @@ export const ESCROW_RULES = {
 
                 }
 
-            }
+            },
+
+            
+
 
         }
 
@@ -456,6 +561,51 @@ export const ESCROW_RULES = {
                 async execute({ order }) {
 
                     order.metadata.refundRejectedAt = new Date();
+
+                }
+
+            },
+
+            cancelRefund: {
+
+                 to: ({ order }) => {
+                    return Number(order.remainingAmount) === 0
+                        ? "FUNDED"
+                         : "PARTIALLY_FUNDED"
+                },
+
+                roles: ["buyer"],
+
+                validate({ order }) {
+
+                    Validators.hasEscrow(order);
+
+                },
+
+                async execute({ order }) {
+                        console.log('action perform ');
+                        
+                    order.metadata.releaseRequestedAt = null;
+                    order.metadata.refundRejectedAt = null;
+                    order.metadata.releaseRejectedAt = null;
+                     order.metadata.refundRequestedAt = null;
+
+                },
+
+                response: {
+
+                    title: "Refund cancel",
+
+                    message:
+                        "Your refund request was not approved.",
+
+                    description:
+                        "Based on the investigation, the transaction does not qualify for a refund.",
+
+                    nextStep:
+                        "You may appeal the decision by contacting customer support.",
+
+                    type: "error"
 
                 }
 
