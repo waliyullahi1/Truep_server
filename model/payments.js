@@ -246,6 +246,14 @@ PaymentSchema.methods.canRefund = function () {
   return this.status === "SUCCESS";
 };
 
+// PaymentSchema.index(
+//     { TransactionId: 1 },
+//     {
+//         unique: true,
+//         sparse: true
+//     }
+// );
+
 PaymentSchema.methods.isPending = function () {
   return [
     "CREATED",

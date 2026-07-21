@@ -1,9 +1,11 @@
 import axios from "axios";
-
+import dotenv from "dotenv";
+dotenv.config();
 
 /**
  * Get Paystack Transaction Fee
  */
+console.log(process.env.PAYSTACK_SECRET_KEY,'ddddddddddddddddd');
 
 
 class PaystackService {

@@ -31,7 +31,7 @@ export const handleLogin = async (req, res) => {
     }
   
     // Check email verification
-      if (!foundUser.emailVerified) {
+      if (!foundUser.emailVerified || !foundUser.password) {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         foundUser.emailVerificationToken = otp;
         await foundUser.save();
@@ -61,7 +61,7 @@ export const handleLogin = async (req, res) => {
           message: "Email not verified. Verification code re-sent."
         });
       }
-
+      
       // Compare password
       const match = await bcrypt.compare(pwd, foundUser.password);
       if (!match) {

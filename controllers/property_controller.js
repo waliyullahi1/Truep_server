@@ -314,12 +314,12 @@ export const getPropertyById = async (req, res) => {
             .populate({
               path: "buyer",
               select:
-                "firstName lastName email whatsapp_no phone avatar location",
+                "firstName lastName roles email whatsapp_no phone avatar location",
             })
             .populate({
               path: "seller",
               select:
-               "firstName lastName email whatsapp_no phone avatar location",
+               "firstName lastName roles email whatsapp_no phone avatar location",
             })
             
         }
@@ -333,7 +333,7 @@ export const getPropertyById = async (req, res) => {
           orderQuery = orderQuery.populate({
             path: "buyer",
             select:
-              "firstName lastName email whatsapp_no phone avatar location",
+              "firstName roles lastName email whatsapp_no phone avatar location",
           });
         }
 
@@ -346,7 +346,7 @@ export const getPropertyById = async (req, res) => {
           orderQuery = orderQuery.populate({
             path: "seller",
             select:
-             "firstName lastName email whatsapp_no phone avatar location",
+             "firstName lastName roles email whatsapp_no phone avatar location",
           });
         }
 

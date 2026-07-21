@@ -137,7 +137,38 @@ WalletLedgerSchema.index({
   createdAt: -1
 });
 
-
+WalletLedgerSchema.index(
+    {
+        reference: 1,
+        category: 1,
+        type: 1
+    },
+    {
+        unique: true,
+        partialFilterExpression: {
+            reference: {
+                $type: "string"
+            }
+        }
+    }
+);
+WalletLedgerSchema.index(
+    {
+        payment: 1,
+        category: 1,
+        type: 1
+    },
+    {
+        unique: true,
+        partialFilterExpression: {
+            payment: {
+                $type: "objectId"
+            },
+            category: "ESCROW_DEPOSIT",
+            type: "CREDIT"
+        }
+    }
+);
 
 WalletLedgerSchema.index({
   status: 1

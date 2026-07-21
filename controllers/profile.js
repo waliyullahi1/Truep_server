@@ -636,7 +636,8 @@ export const getAgent = async (req, res) => {
     const { id } = req.params
 
     const isValidId = mongoose.Types.ObjectId.isValid(id)
-
+    console.log(isValidId);
+    
     if (!isValidId) {
       return res.status(404).json({
         success: false,
@@ -767,7 +768,8 @@ export const getAgent = async (req, res) => {
         },
       },
     ])
-
+    console.log(agent);
+    
     if (!agent.length) {
       return res.status(404).json({
         success: false,

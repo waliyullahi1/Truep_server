@@ -3,17 +3,27 @@ dotenv.config();
 
 
 import express from "express"
-
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import mongoSanitize from "express-mongo-sanitize";
+import hpp from "hpp";
 import path from "path"
 import cors from "cors"
 import cookieParser from "cookie-parser"
 import mongoose from "mongoose"
-
+// import csrfRoute from "./route/csrf.js";
 
 import { fileURLToPath } from "url"
 
 import { logger } from "./middleware/logEvent.js"
 import errorHandle from "./middleware/erroHandle.js"
+import { startPaymentVerificationJob } from "./job/payment.job.js";
+
+// import {
+//   csrfSynchronisedProtection
+// } from "./middleware/csrf.js";
+
+
 
 import connectDB from "./config/db.js"
 
@@ -31,7 +41,14 @@ import pingRoutes from "./route/ping.js"
 import orderRoutes from "./route/api/order.js"
 import transactionRoutes from "./route/api/trnasaction.js"
 import payoutRoutes from "./route/api/payout.js"
+import reviewRoutes from "./route/api/review.js"
+
+
 const app = express()
+
+
+
+
 
 const PORT = process.env.PORT || 5000
 
@@ -42,8 +59,80 @@ console.log("ENV TEST:", process.env.CLOUDINARY_API_KEY);
 // Connect DB
 connectDB()
 
+
+// app.set("trust proxy", 1);
+// app.disable("x-powered-by");
+
+
 // Logger middleware
 app.use(logger)
+
+
+
+// app.use(
+//   helmet({
+//     crossOriginEmbedderPolicy: false,
+
+//     contentSecurityPolicy: {
+//       directives: {
+//         defaultSrc: ["'self'"],
+
+//         scriptSrc: [
+//           "'self'",
+//           "https://js.paystack.co",
+//           "https://checkout.flutterwave.com"
+//         ],
+
+//         connectSrc: [
+//           "'self'",
+//           "https://api.paystack.co",
+//           "https://api.flutterwave.com",
+//           "https://res.cloudinary.com"
+//         ],
+
+//         imgSrc: [
+//           "'self'",
+//           "data:",
+//           "blob:",
+//           "https://res.cloudinary.com"
+//         ],
+
+//         styleSrc: [
+//           "'self'",
+//           "'unsafe-inline'"
+//         ],
+
+//         objectSrc: ["'none'"],
+
+//         frameSrc: [
+//           "https://js.paystack.co",
+//           "https://checkout.flutterwave.com"
+//         ],
+
+//         upgradeInsecureRequests: []
+//       }
+//     },
+
+//     hsts: {
+//       maxAge: 31536000,
+//       includeSubDomains: true,
+//       preload: true
+//     },
+
+//     frameguard: {
+//       action: "sameorigin"
+//     },
+
+//     dnsPrefetchControl: {
+//       allow: false
+//     },
+
+//     referrerPolicy: {
+//       policy: "strict-origin-when-cross-origin"
+//     }
+//   })
+// );
+
 
 // CORS configuration
 const corsOptions = {
@@ -59,10 +148,35 @@ const corsOptions = {
 
 app.use(cors(corsOptions))
 
+
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many requests. Please try again later."
+  }
+});
+
+// app.use(limiter);
 // Middleware
-app.use(express.urlencoded({ extended: false }))
-app.use(express.json())
+app.use(express.json({
+    limit: "5mb"
+}));
+
+app.use(express.urlencoded({
+    extended: false,
+    limit: "5mb"
+}));
+// app.use(mongoSanitize());
+
+// app.use(hpp())
 app.use(cookieParser())
+// app.use(csrfSynchronisedProtection);
+// app.use("/csrf", csrfRoute);
 
 // Static files
 app.use("/", express.static(path.join(__dirname, "public")))
@@ -80,6 +194,8 @@ app.use('/payment', paymentRoute)
 app.use('/order', orderRoutes)
 app.use("/transactions", transactionRoutes)
 app.use("/payout", payoutRoutes)
+app.use("/review", reviewRoutes)
+// app.use("/csrf", csrfRoute);
 // Test route
 app.get(
   "/red(.html)?",
@@ -102,4 +218,5 @@ mongoose.connection.once("open", () => {
   app.listen(PORT, () =>
     console.log(`Server running on port ${PORT}`)
   )
+   startPaymentVerificationJob();
 })

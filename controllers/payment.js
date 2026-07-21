@@ -202,3 +202,140 @@ export const getTransactionpayemt= async (req,res) => {
     });
   } 
 }
+
+export const verifyPendingPayments = async (req, res) => {
+    try {
+        console.log(
+            "Starting pending payment verification..."
+        );
+
+        const result =
+            await PaymentService.verifyAllPendingPayments();
+
+        console.log(
+            "Verification result:",
+            result
+        );
+
+        return res.status(200).json({
+            success: true,
+            message:
+                result?.message ||
+                "Pending payment verification completed.",
+
+            total:
+                result?.total || 0,
+
+            successful:
+                result?.successful || 0,
+
+            failed:
+                result?.failed || 0,
+
+            results:
+                result?.results || []
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Pending payment verification error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                error?.message ||
+                "Failed to verify pending payments."
+        });
+    }
+};
+// verifyPendingPayments()
+export const testPaymentConcurrency = async (req, res) => {
+
+    try {
+
+        const { txRef } = req.body;
+
+        if (!txRef) {
+            return res.status(400).json({
+                success: false,
+                message: "txRef is required"
+            });
+        }
+
+        console.log(
+            `Starting concurrency test for ${txRef}`
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Send 5 requests simultaneously
+        |--------------------------------------------------------------------------
+        */
+
+        const results = await Promise.allSettled([
+
+            PaymentService.verifyOrderPayment(txRef),
+
+            PaymentService.verifyOrderPayment(txRef),
+
+            PaymentService.verifyOrderPayment(txRef),
+
+            PaymentService.verifyOrderPayment(txRef),
+
+            PaymentService.verifyOrderPayment(txRef)
+
+        ]);
+
+
+        console.log(
+            "Concurrency test completed."
+        );
+
+
+        return res.status(200).json({
+
+            success: true,
+
+            message:
+                "Concurrency test completed.",
+
+            results: results.map((result, index) => {
+
+                if (result.status === "fulfilled") {
+
+                    return {
+                        request: index + 1,
+                        status: "SUCCESS"
+                    };
+
+                }
+
+                return {
+                    request: index + 1,
+                    status: "FAILED",
+                    error: result.reason?.message
+                };
+
+            })
+
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+
+            success: false,
+
+            message: error.message
+
+        });
+
+    }
+
+};

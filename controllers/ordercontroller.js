@@ -649,3 +649,170 @@ export const getOrders = async (req, res) => {
     });
   }
 };
+
+export const getOrdersAdmin = async (req, res) => {
+  try {
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.max(Number(req.query.limit) || 10, 1);
+    const skip = (page - 1) * limit;
+
+    const {
+      search = "",
+      status = "",
+      sort = "-createdAt",
+      buyer = "",
+      seller = "",
+      property = ""
+    } = req.query;
+
+    const filter = {};
+
+    /* ==========================
+       Filters
+    ========================== */
+
+    if (status) {
+      filter.escrowStatus = status;
+    }
+
+    if (buyer) {
+      filter.buyer = buyer;
+    }
+
+    if (seller) {
+      filter.seller = seller;
+    }
+
+    if (property) {
+      filter.property = property;
+    }
+
+    /* ==========================
+       Search
+    ========================== */
+
+    if (search.trim()) {
+      const properties = await Property.find({
+        title: {
+          $regex: search,
+          $options: "i"
+        }
+      }).select("_id");
+
+      const users = await User.find({
+        $or: [
+          {
+            firstName: {
+              $regex: search,
+              $options: "i"
+            }
+          },
+          {
+            lastName: {
+              $regex: search,
+              $options: "i"
+            }
+          },
+          {
+            email: {
+              $regex: search,
+              $options: "i"
+            }
+          }
+        ]
+      }).select("_id");
+
+      filter.$or = [
+        {
+          orderNumber: {
+            $regex: search,
+            $options: "i"
+          }
+        },
+        {
+          property: {
+            $in: properties.map((p) => p._id)
+          }
+        },
+        {
+          buyer: {
+            $in: users.map((u) => u._id)
+          }
+        },
+        {
+          seller: {
+            $in: users.map((u) => u._id)
+          }
+        }
+      ];
+    }
+
+    /* ==========================
+       Count
+    ========================== */
+
+    const total = await PropertyOrder.countDocuments(filter);
+
+    /* ==========================
+       Orders
+    ========================== */
+
+    const orders = await PropertyOrder.find(filter)
+      .populate({
+        path: "property",
+        select: "title slug media pricing purpose type location"
+      })
+      .populate({
+        path: "buyer",
+        select: "firstName lastName email phone avatar"
+      })
+      .populate({
+        path: "seller",
+        select: "firstName lastName email phone avatar"
+      })
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    /* ==========================
+       Progress
+    ========================== */
+
+    const formattedOrders = orders.map((order) => {
+      const totalAmount = Number(order.totalAmount || 0);
+      const paidAmount = Number(order.amountPaid || 0);
+
+      return {
+        ...order,
+        progress:
+          totalAmount > 0
+            ? Math.round((paidAmount / totalAmount) * 100)
+            : 0
+      };
+    });
+
+    /* ==========================
+       Response
+    ========================== */
+
+    return res.status(200).json({
+      success: true,
+      orders: formattedOrders,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
