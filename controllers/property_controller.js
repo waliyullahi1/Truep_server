@@ -1697,6 +1697,10 @@ export const getAllPropertyHomePage = async (req, res) => {
 
     // Join User collection
     pipeline.push({
+
+       $match: {
+        status: "ACTIVE",
+      },
       $lookup: {
         from: "users", // Your users collection name
         localField: "user",
