@@ -1688,6 +1688,122 @@ export const getAPropertys = async (req, res) => {
   }
 }
 
+export const getAllPropertyHomePage = async (req, res) => {
+  try {
+    const keyword = (req.query.q || "").trim();
+    const limit = Number(req.query.limit) || 6;
+
+    const pipeline = [];
+
+    // Join User collection
+    pipeline.push({
+      $lookup: {
+        from: "users", // Your users collection name
+        localField: "user",
+        foreignField: "_id",
+        as: "user",
+      },
+    });
+
+    pipeline.push({
+      $unwind: {
+        path: "$user",
+        preserveNullAndEmptyArrays: true,
+      },
+    });
+
+    // Search
+    if (keyword) {
+      pipeline.push({
+        $match: {
+          $or: [
+            {
+              title: {
+                $regex: keyword,
+                $options: "i",
+              },
+            },
+            {
+              description: {
+                $regex: keyword,
+                $options: "i",
+              },
+            },
+            {
+              purpose: {
+                $regex: keyword,
+                $options: "i",
+              },
+            },
+            {
+              type: {
+                $regex: keyword,
+                $options: "i",
+              },
+            },
+            {
+              category: {
+                $regex: keyword,
+                $options: "i",
+              },
+            },
+            {
+              "location.city": {
+                $regex: keyword,
+                $options: "i",
+              },
+            },
+            {
+              "location.state": {
+                $regex: keyword,
+                $options: "i",
+              },
+            },
+            {
+              "location.address": {
+                $regex: keyword,
+                $options: "i",
+              },
+            },
+            {
+              "user.profile.name": {
+                $regex: keyword,
+                $options: "i",
+              },
+            },
+          ],
+        },
+      });
+    }
+
+    pipeline.push({
+      $sort: {
+        createdAt: -1,
+      },
+    });
+
+    pipeline.push({
+      $limit: limit,
+    });
+
+    const properties = await Propert.aggregate(pipeline);
+
+    return res.status(200).json({
+      success: true,
+      count: properties.length,
+      data: properties,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
 export const getSitemapProperties = async (req, res) => {
   try {
     const properties = await Propert.find(

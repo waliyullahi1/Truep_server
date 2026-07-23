@@ -207,7 +207,8 @@ PropertSchema.index({
   "location.address": "text",
   "location.city": "text",
   "location.state": "text",
-  "location.lga": "text"
+  "location.lga": "text",
+  "features.label":"text",
 })
 
 /* =========================================
@@ -217,7 +218,8 @@ PropertSchema.index({
 PropertSchema.index({
   type: 1,
   category: 1,
-  purpose: 1
+  purpose: 1,
+  description: 1,
 })
 
 PropertSchema.index({

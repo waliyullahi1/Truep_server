@@ -55,7 +55,7 @@ const PORT = process.env.PORT || 5000
 // Fix __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-console.log("ENV TEST:", process.env.CLOUDINARY_API_KEY);
+console.log("connecting.............:");
 // Connect DB
 connectDB()
 
