@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
-
+import dns from "node:dns"
 
 import express from "express"
 import helmet from "helmet";
@@ -9,6 +9,15 @@ import mongoSanitize from "express-mongo-sanitize";
 import hpp from "hpp";
 import path from "path"
 import cors from "cors"
+dotenv.config()
+
+// Force Node.js DNS to use Google DNS
+dns.setServers([
+  "8.8.8.8",
+  "8.8.4.4"
+])
+
+
 import cookieParser from "cookie-parser"
 import mongoose from "mongoose"
 // import csrfRoute from "./route/csrf.js";
@@ -218,5 +227,5 @@ mongoose.connection.once("open", () => {
   app.listen(PORT, () =>
     console.log(`Server running on port ${PORT}`)
   )
-   startPaymentVerificationJob();
+  //  startPaymentVerificationJob();
 })
